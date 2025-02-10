@@ -20,7 +20,8 @@ Managing schedules and finding time for yourself can be difficult as a universit
 * Create KanBan boards / to-do lists from given tasks, or prompt with some project description
 
 ## Tech Stack & Resources 💻
-#### MERN Stack (MongoDB, Express.js, React, Node.js)
+#### MongoDB, Flask / Express.js, React
+
 <details>
   
 **<summary>Comprehensive Full-Stack Tutorials</summary>**
