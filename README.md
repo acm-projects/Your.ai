@@ -27,7 +27,6 @@ Managing schedules and finding time for yourself can be difficult as a universit
 
 * [Dave Gray: MERN Stack Tutorial Playlist](https://www.youtube.com/playlist?list=PL0Zuz27SZ-6P4dQUsoDatjEGpmBpcOW8V)
 * [NetNinja: MERN Stack Crash Course Tutorial Playlist](https://www.youtube.com/playlist?list=PL4cUxeGkcC9iJ_KkrkBZWZRHVwnzLIoUE)
-* [Auth implementation w/ MERN](https://www.youtube.com/watch?v=b5LDOW8WJ9A&list=PL4cUxeGkcC9g8OhpOZxNdhXggFz2lOuCT&index=2)
   
 </details>
 
@@ -38,6 +37,7 @@ Managing schedules and finding time for yourself can be difficult as a universit
 * [Official React Documentation / Setup](https://react.dev/learn/start-a-new-react-project)
 * [React Tutorial for Beginners](https://youtu.be/SqcY0GlETPk?si=7m4sb_bs-ksPQLkv)
 * [JS Mastery React JS Full Course 2023, 1 hour](https://www.youtube.com/watch?v=b9eMGE7QtTk&ab_channel=JavaScriptMastery)
+* [Web Notifications API for React](https://www.youtube.com/watch?v=mFRPpINFMz0)
 * [Official TailwindCSS Documentation / Setup](https://tailwindcss.com/docs/installation)
 * [Official Bootstrap Documentation / Setup for JavaScript](https://getbootstrap.com/docs/5.3/getting-started/javascript/)
 
@@ -47,21 +47,24 @@ Managing schedules and finding time for yourself can be difficult as a universit
   
 **<summary>Back-end</summary>**
 
-* [Official Express.js Documentation / Setup](https://expressjs.com/en/starter/installing.html)
-* [Dave Gray Intro to Express.js](https://www.youtube.com/watch?v=jivyItmsu18&ab_channel=DaveGray)
-* [Learn Express.js in 35 Minutes](https://www.youtube.com/watch?v=SccSCuHhOw0&ab_channel=WebDevSimplified)
-* [Official Mongoose Documentation (Express.js library for connecting to MongoDB database)](https://mongoosejs.com/docs/)
-
+* Flask back-end server
+  * [OAuth-based Authentication in Flask](https://syscrews.medium.com/oauth-based-authentication-in-flask-3569746002ba)
+  * [Flask + OpenAI GPT](https://medium.com/@abed63/flask-application-with-openai-chatgpt-integration-tutorial-958588ac6bdf)  * 
+* Alternative to Flask - Node.js server using Express.js
+  * [Official Express.js Documentation / Setup](https://expressjs.com/en/starter/installing.html)
+  * [Dave Gray Intro to Express.js](https://www.youtube.com/watch?v=jivyItmsu18&ab_channel=DaveGray)
+  * [Learn Express.js in 35 Minutes](https://www.youtube.com/watch?v=SccSCuHhOw0&ab_channel=WebDevSimplified)
+  * [Official Mongoose Documentation (Express.js library for connecting to MongoDB database)](https://mongoosejs.com/docs/)
 </details>
 
 <details>
   
 **<summary>Third-party Integrations / APIs</summary>**
 
-* [Zoom Integration Into Nodejs App | Medium](https://medium.com/@merlovelace/zoom-integration-into-nodejs-app-2c72b731f5d6)
-* [Build and Connect: Mastering Zoom API with Node.js](https://www.youtube.com/watch?v=0lhgP6Qe6zg&ab_channel=CodingwithAdo)
-* [Official Twilio Documentation for Node.js](https://www.twilio.com/docs/messaging/quickstart/node)
-* [Add Google Maps and Places with React - Official YouTube Playlist](https://www.youtube.com/playlist?list=PL2rFahu9sLJ2QuJaKKYDaJp0YqjFCDCtN)
+  * [OpenAI API Platform | Developer Quickstart](https://platform.openai.com/docs/quickstart)
+  * [OpenAI API Platform | Assistants API Overview](https://platform.openai.com/docs/assistants/overview)
+  * [RAG w/ LangChain Tutorial](https://python.langchain.com/docs/tutorials/rag/)
+  * [Google Calendar API official Documentation](https://developers.google.com/calendar)
 
 </details>
 
@@ -197,7 +200,7 @@ Managing schedules and finding time for yourself can be difficult as a universit
 * Integrate with other calendar services (Outlook, iPhone, etc) or a built in calendar.
 * Automatic event/task categorization and/or prioritization
 * Proactive time management recommendations (helpful tips based on user’s calendar activity)
-* Real Users :0
+* Deployment + Real Users :0
 
 ## GitHub Cheat Sheet 💬
 
@@ -221,9 +224,12 @@ Managing schedules and finding time for yourself can be difficult as a universit
 
 <div align="center">
 <h2>🎊Developers🎊</h2>
-
+<h3>Suhani Rana</h3><br/>
+<h3>Krish Arora</h3><br/>
+<h3>Harsh Patel</h3><br/>
+<h3>Sreenidhi Palaniappan</h3><br/>
 <h2>🎊Project Manager🎊</h2>
 <h3>Lerich Osay</h3><br/>
-
 <h2>🎊Industry Mentor🎊</h2>
+<h3>Linh Ly</h3><br/>
 <div />
