@@ -65,6 +65,7 @@ Managing schedules and finding time for yourself can be difficult as a universit
   * [OpenAI API Platform | Developer Quickstart](https://platform.openai.com/docs/quickstart)
   * [OpenAI API Platform | Assistants API Overview](https://platform.openai.com/docs/assistants/overview)
   * [RAG w/ LangChain Tutorial](https://python.langchain.com/docs/tutorials/rag/)
+  * [What is RAG?](https://aws.amazon.com/what-is/retrieval-augmented-generation/)
   * [Google Calendar API official Documentation](https://developers.google.com/calendar)
 
 </details>
