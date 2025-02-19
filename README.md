@@ -18,6 +18,8 @@ Managing schedules and finding time for yourself can be difficult as a universit
 * Push notifications that can be set by the AI assistant to remind the user of upcoming events or tasks due
   * Push notifications from the browser and/or email notifications
 * Create KanBan boards / to-do lists from given tasks, or prompt with some project description
+* Week-at-a-glance
+  * Summary of weekly schedule and possible time management suggestions
 
 ## Tech Stack & Resources 💻
 #### MongoDB, Flask / Express.js, React
@@ -200,6 +202,7 @@ Managing schedules and finding time for yourself can be difficult as a universit
 ## Stretch Goals 💪
 
 * Integrate with other calendar services (Outlook, iPhone, etc) or a built in calendar.
+* Shared calendar(s) between users
 * Automatic event/task categorization and/or prioritization
 * Proactive time management recommendations (helpful tips based on user’s calendar activity)
 * Deployment + Real Users :0
