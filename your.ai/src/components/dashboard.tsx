@@ -45,11 +45,16 @@ const Dashboard: React.FC = () => {
               <i className="fas fa-mr-3"></i>
               My Calendar
             </a>
-            <a href="#" className="flex items-center px-4 py-2 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600">
-              <i className="fas fa-sticky-note mr-3"></i>
-              Newsletter
-            </a>
+            <Link to="/newsletter" className="flex items-center px-4 py-2 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600">
+            Newsletter
+            </Link>
+
+            <Link to="/kanban" className="flex items-center px-4 py-2 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600">
+            Kanban
+            </Link>
+
             <Link to="/tasks" className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
+            
   Tasks
 </Link>
 

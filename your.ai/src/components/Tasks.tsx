@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 // ✅ Activity Ring Component
-const ActivityRing: React.FC<{ progress: number; color: string; size?: number; strokeWidth?: number }> = ({
-  progress, 
+const ActivityRing: React.FC<{ progress: number; color: string; size?: number; strokeWidth?: number }> = ({ 
   color, 
   size = 120, 
   strokeWidth = 12 
@@ -27,7 +26,7 @@ const ActivityRing: React.FC<{ progress: number; color: string; size?: number; s
 const Tasks: React.FC = () => {
   const [completionRate, setCompletionRate] = useState(0);
   const [weeklyTasks, setWeeklyTasks] = useState<Task[]>([]);
-  const [columns, setColumns] = useState<Column[]>([
+  const [columns] = useState<Column[]>([
     { id: 'todo', title: 'To Do', tasks: [] },
     { id: 'inProgress', title: 'In Progress', tasks: [] },
     { id: 'done', title: 'Done', tasks: [] },
@@ -37,11 +36,27 @@ const Tasks: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [currentWeather, setCurrentWeather] = useState<{ temperature: number; description: string; icon: string } | null>(null);
 
+  // Load data from localStorage on component mount
   useEffect(() => {
-    if (weeklyTasks.length === 0) return;
-    const completedTasks = weeklyTasks.filter((task) => task.completed).length;
-    setCompletionRate((completedTasks / weeklyTasks.length) * 100);
-  }, [weeklyTasks]);
+    const storedTasks = localStorage.getItem('weeklyTasks');
+    const storedCompletionRate = localStorage.getItem('completionRate');
+    
+    if (storedTasks) {
+      setWeeklyTasks(JSON.parse(storedTasks));
+    }
+    
+    if (storedCompletionRate) {
+      setCompletionRate(Number(storedCompletionRate));
+    }
+  }, []);
+
+  // Save data to localStorage whenever weeklyTasks or completionRate changes
+  useEffect(() => {
+    if (weeklyTasks.length > 0) {
+      localStorage.setItem('weeklyTasks', JSON.stringify(weeklyTasks));
+    }
+    localStorage.setItem('completionRate', String(completionRate));
+  }, [weeklyTasks, completionRate]);
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(async (position) => {
