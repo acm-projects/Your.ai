@@ -1,24 +1,23 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
 
 interface Event {
   id: string;
   title: string;
   time: string;
   attendees: number;
-  type: 'meeting' | 'task' | 'session';
+  type: "meeting" | "task" | "session";
 }
 
 const Dashboard: React.FC = () => {
-  const [view, setView] = useState<'Weekly' | 'Monthly' | 'Yearly'>('Weekly');
-  const [currentDate] = useState('March 2025');
+  const [view, setView] = useState<"Weekly" | "Monthly" | "Yearly">("Weekly");
+  const [currentDate] = useState("March 2025");
 
   const sampleEvents: Event[] = [
-    { id: '1', title: 'Test for data structures', time: '09:00 AM - 10:30 AM', attendees: 3, type: 'task' },
-    { id: '2', title: 'Finishing frontend Pages', time: '08:30 AM - 10:00 AM', attendees: 3, type: 'task' },
-    { id: '3', title: 'Hang out with friends at starbucks', time: '10:30 AM - 12:00 PM', attendees: 3, type: 'session' },
-    { id: '4', title: 'Interview for Apple', time: '11:35 AM - 01:00 AM', attendees: 3, type: 'meeting' },
+    { id: "1", title: "Test for data structures", time: "09:00 AM - 10:30 AM", attendees: 3, type: "task" },
+    { id: "2", title: "Finishing frontend Pages", time: "08:30 AM - 10:00 AM", attendees: 3, type: "task" },
+    { id: "3", title: "Hang out with friends at Starbucks", time: "10:30 AM - 12:00 PM", attendees: 3, type: "session" },
+    { id: "4", title: "Interview for Apple", time: "11:35 AM - 01:00 AM", attendees: 3, type: "meeting" },
   ];
 
   return (
@@ -37,23 +36,25 @@ const Dashboard: React.FC = () => {
             MAIN MENU
           </div>
           <div className="mt-4">
-            <a href="#" className="flex items-center px-4 py-2 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600">
-              <i className="fas fa-th-large mr-3"></i>
-              Dashboard
-            </a>
+            <Link
+              to="/dashboard"
+              className="flex items-center px-4 py-2 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600"
+            >
+              <i className="fas fa-th-large mr-3"></i> Dashboard
+            </Link>
             <a href="#" className="flex items-center px-4 py-2 bg-indigo-50 text-indigo-600">
-              <i className="fas fa-mr-3"></i>
-              My Calendar
+              <i className="fas fa-calendar-alt mr-3"></i> My Calendar
             </a>
             <a href="#" className="flex items-center px-4 py-2 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600">
-              <i className="fas fa-sticky-note mr-3"></i>
-              Newsletter
+              <i className="fas fa-sticky-note mr-3"></i> Newsletter
             </a>
-            <Link to="/tasks" className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
-  Tasks
-</Link>
-
-          
+            <Link
+              to="/tasks"
+              className="flex items-center px-4 py-2 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600"
+            >
+              <i className="fas fa-tasks mr-3"></i> Tasks
+              </Link>
+           
           </div>
 
           <div className="mt-8 px-4 font-medium text-gray-500 uppercase tracking-wider text-xs">
@@ -61,10 +62,8 @@ const Dashboard: React.FC = () => {
           </div>
           <div className="mt-4">
             <a href="#" className="flex items-center px-4 py-2 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600">
-              <i className="fas fa-cog mr-3"></i>
-              Settings
+              <i className="fas fa-cog mr-3"></i> Settings
             </a>
-            
           </div>
         </nav>
       </div>
@@ -76,14 +75,12 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center space-x-4">
               <h1 className="text-xl font-semibold">My Calendar</h1>
               <div className="flex space-x-2">
-                {['Weekly', 'Monthly', 'Yearly'].map((viewType) => (
+                {["Weekly", "Monthly", "Yearly"].map((viewType) => (
                   <button
                     key={viewType}
                     onClick={() => setView(viewType as any)}
                     className={`px-4 py-1 text-sm rounded-md ${
-                      view === viewType
-                        ? 'bg-indigo-50 text-indigo-600'
-                        : 'text-gray-600 hover:bg-gray-50'
+                      view === viewType ? "bg-indigo-50 text-indigo-600" : "text-gray-600 hover:bg-gray-50"
                     }`}
                   >
                     {viewType}
@@ -93,16 +90,13 @@ const Dashboard: React.FC = () => {
             </div>
             <div className="flex items-center space-x-4">
               <button className="flex items-center px-3 py-1 text-sm text-gray-600 border rounded-md hover:bg-gray-50">
-                <i className="fas fa-file-export mr-2"></i>
-                Export
+                <i className="fas fa-file-export mr-2"></i> Export
               </button>
               <button className="flex items-center px-3 py-1 text-sm text-gray-600 border rounded-md hover:bg-gray-50">
-                <i className="fas fa-trash-alt mr-2"></i>
-                Deleted Schedule
+                <i className="fas fa-trash-alt mr-2"></i> Deleted Schedule
               </button>
               <button className="flex items-center px-4 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700">
-                <i className="fas fa-plus mr-2"></i>
-                Create Schedule
+                <i className="fas fa-plus mr-2"></i> Create Schedule
               </button>
             </div>
           </div>
@@ -128,7 +122,7 @@ const Dashboard: React.FC = () => {
 
           <div className="bg-white rounded-lg shadow">
             <div className="grid grid-cols-7 gap-4 p-4 border-b">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
                 <div key={day} className="text-center text-gray-600">
                   {day}
                 </div>
@@ -137,18 +131,21 @@ const Dashboard: React.FC = () => {
             <div className="divide-y">
               {Array.from({ length: 12 }).map((_, i) => (
                 <div key={i} className="flex p-4">
-                  <div className="w-20 text-gray-500">{`${(i + 9).toString().padStart(2, '0')}:00`}</div>
+                  <div className="w-20 text-gray-500">{`${(i + 9).toString().padStart(2, "0")}:00`}</div>
                   <div className="flex-1 relative">
                     {sampleEvents
-                      .filter((event) => event.time.startsWith(`${(i + 9).toString().padStart(2, '0')}:`))
+                      .filter((event) => event.time.startsWith(`${(i + 9).toString().padStart(2, "0")}:`))
                       .map((event) => (
-                        <div key={event.id} className={`absolute left-0 right-0 p-2 rounded-lg ${
-                          event.type === 'meeting'
-                            ? 'bg-red-50 border-l-4 border-red-500'
-                            : event.type === 'task'
-                            ? 'bg-green-50 border-l-4 border-green-500'
-                            : 'bg-yellow-50 border-l-4 border-yellow-500'
-                        }`}>
+                        <div
+                          key={event.id}
+                          className={`absolute left-0 right-0 p-2 rounded-lg ${
+                            event.type === "meeting"
+                              ? "bg-red-50 border-l-4 border-red-500"
+                              : event.type === "task"
+                              ? "bg-green-50 border-l-4 border-green-500"
+                              : "bg-yellow-50 border-l-4 border-yellow-500"
+                          }`}
+                        >
                           <span className="font-medium">{event.title}</span>
                           <div className="text-sm text-gray-500">{event.time}</div>
                         </div>

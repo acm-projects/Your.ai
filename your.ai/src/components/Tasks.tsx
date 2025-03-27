@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 
-// ✅ Activity Ring Component
 const ActivityRing: React.FC<{ progress: number; color: string; size?: number; strokeWidth?: number }> = ({
   progress, 
   color, 
@@ -35,7 +34,6 @@ const Tasks: React.FC = () => {
   const [newTask, setNewTask] = useState({ title: '', description: '', priority: 'medium' as const });
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [currentWeather, setCurrentWeather] = useState<{ temperature: number; description: string; icon: string } | null>(null);
 
   useEffect(() => {
     if (weeklyTasks.length === 0) return;
@@ -43,21 +41,7 @@ const Tasks: React.FC = () => {
     setCompletionRate((completedTasks / weeklyTasks.length) * 100);
   }, [weeklyTasks]);
 
-  useEffect(() => {
-    navigator.geolocation.getCurrentPosition(async (position) => {
-      const { latitude, longitude } = position.coords;
-      const API_KEY = 'YOUR_OPENWEATHER_API_KEY';
-      try {
-        const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${API_KEY}`);
-        const data = await response.json();
-        setCurrentWeather({ temperature: Math.round(data.main.temp), description: data.weather[0].description, icon: data.weather[0].icon });
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching weather data:', error);
-        setLoading(false);
-      }
-    });
-  }, []);
+  
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">

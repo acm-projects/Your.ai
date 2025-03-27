@@ -5,7 +5,6 @@ interface Message {
   text: string;
   sender: 'user' | 'bot';
   timestamp: string;
-  isAudio?: boolean;
 }
 
 const Chatbot: React.FC = () => {
@@ -13,15 +12,13 @@ const Chatbot: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
-      text: "Hello! I'm your AI assistant. I can help you manage your calendar and tasks through text or voice commands.",
+      text: "Hello! I'm your AI assistant. I can help you manage your calendar and tasks through text commands.",
       sender: 'bot',
-      timestamp: new Date().toLocaleTimeString()
+      timestamp: new Date().toLocaleTimeString(),
     }
   ]);
   const [inputText, setInputText] = useState('');
-  const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -57,7 +54,7 @@ const Chatbot: React.FC = () => {
       id: messages.length + 2,
       text: response,
       sender: 'bot',
-      timestamp: new Date().toLocaleTimeString()
+      timestamp: new Date().toLocaleTimeString(),
     };
 
     setMessages(prev => [...prev, newMessage]);
@@ -72,57 +69,13 @@ const Chatbot: React.FC = () => {
       id: messages.length + 1,
       text: inputText,
       sender: 'user',
-      timestamp: new Date().toLocaleTimeString()
+      timestamp: new Date().toLocaleTimeString(),
     };
 
     setMessages(prev => [...prev, userMessage]);
     setInputText('');
 
     await processNaturalLanguage(inputText);
-  };
-
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      
-      const audioChunks: BlobPart[] = [];
-      
-      mediaRecorder.ondataavailable = (event) => {
-        audioChunks.push(event.data);
-      };
-
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-        // TODO: Send audio to speech-to-text service
-        // Simulated transcription
-        const transcription = "This is a simulated voice transcription";
-        
-        const userMessage: Message = {
-          id: messages.length + 1,
-          text: transcription,
-          sender: 'user',
-          timestamp: new Date().toLocaleTimeString(),
-          isAudio: true
-        };
-
-        setMessages(prev => [...prev, userMessage]);
-        await processNaturalLanguage(transcription);
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-    } catch (error) {
-      console.error('Error accessing microphone:', error);
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-    }
   };
 
   return (
@@ -168,9 +121,6 @@ const Chatbot: React.FC = () => {
                       : 'bg-gray-100 text-gray-800'
                   }`}
                 >
-                  {message.isAudio && (
-                    <i className="fas fa-microphone mr-2 text-xs"></i>
-                  )}
                   <p className="text-sm">{message.text}</p>
                   <span className={`text-xs mt-1 block ${
                     message.sender === 'user' ? 'text-indigo-200' : 'text-gray-500'
@@ -186,17 +136,6 @@ const Chatbot: React.FC = () => {
           {/* Chat Input */}
           <form onSubmit={handleSubmit} className="border-t p-4">
             <div className="flex space-x-2">
-              <button
-                type="button"
-                onClick={isRecording ? stopRecording : startRecording}
-                className={`px-3 py-2 rounded-full focus:outline-none ${
-                  isRecording
-                    ? 'bg-red-600 text-white hover:bg-red-700'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                <i className="fas fa-microphone"></i>
-              </button>
               <input
                 type="text"
                 value={inputText}
