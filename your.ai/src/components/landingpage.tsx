@@ -12,7 +12,7 @@ const LandingPage: React.FC = () => {
               <span className="text-2xl font-bold text-indigo-600">Your.Ai</span>
             </div>
             <div className="hidden md:flex items-center space-x-4">
-            <Link
+              <Link
                 to="/Dashboard"
                 className="text-gray-600 hover:text-gray-900"
               >
@@ -66,21 +66,31 @@ const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-extrabold text-gray-900">See Your.ai in Action</h2>
-            <p className="mt-4 text-lg text-gray-500">Watch how easy it is to organize your schedule and take notes</p>
+            <p className="mt-4 text-lg text-gray-500">
+              Watch how easy it is to organize your schedule and take notes
+            </p>
           </div>
-          <div className="relative max-w-4xl mx-auto">
-            <div className="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden shadow-xl bg-white p-4">
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                  <i className="fas fa-play-circle text-6xl text-indigo-600 mb-4"></i>
-                  <p className="text-gray-600">Demo video coming soon!</p>
-                  <p className="text-sm text-gray-500 mt-2">Experience our AI-powered calendar and note-taking features</p>
+          <div className="flex justify-center">
+            <div className="relative w-full max-w-md rounded-lg overflow-hidden shadow-xl bg-white">
+              <video
+                className="w-full h-70 object-cover"
+                autoPlay
+                muted
+                loop
+                playsInline
+              >
+                <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+              {/* Purple play icon overlay */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 </div>
-              </div>
             </div>
           </div>
         </div>
       </div>
+
+
 
       {/* Features Section */}
       <div id="features" className="py-16 bg-white">
@@ -201,7 +211,7 @@ const LandingPage: React.FC = () => {
                 <a href="#" className="text-gray-400 hover:text-white">
                   <i className="fab fa-linkedin text-xl"></i>
                 </a>
-                
+
               </div>
             </div>
           </div>

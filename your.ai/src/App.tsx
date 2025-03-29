@@ -4,7 +4,6 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "./components/LandingPage";
 import Dashboard from "./components/Dashboard";
 import Tasks from "./components/Tasks";
-import Notifications from "./components/Notifications";
 import Login from "./components/Login";
 import Chatbot from "./components/Chatbot";
 
