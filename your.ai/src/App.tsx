@@ -4,24 +4,15 @@ import Dashboard from './components/dashboard';
 import Newsletter from './components/newsletter';
 import Kanban from './components/kanban';
 import Chatbot from './components/chatbot';
-import Tasks from './components/Tasks'; // Import the Tasks page
-import KanbanBoard from './components/kanban';
+//import Notifications from "./components/Notifications";
+import Login from './components/login';
 
-function App() {
+const App: React.FC = () => {
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} /> 
-
-      <Route path="/dashboard" element={
-        <>
-          <Dashboard />
-          <Chatbot />
-        </>
-      } />
-
-      {/* ✅ Add the new route for the Tasks page */}
-      <Route path="/tasks" element={<Tasks />} />
-
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/dashboard" element={<><Dashboard /><Chatbot /></>} />
       <Route path="*" element={<Navigate to="/" replace />} />
       <Route path="/newsletter" element={<Newsletter onClose={function (): void {
         throw new Error('Function not implemented.');
@@ -31,6 +22,6 @@ function App() {
 
     </Routes>
   );
-}
+};
 
 export default App;

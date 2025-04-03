@@ -12,11 +12,16 @@ const LandingPage: React.FC = () => {
               <span className="text-2xl font-bold text-indigo-600">Your.Ai</span>
             </div>
             <div className="hidden md:flex items-center space-x-4">
-              <a href="#" className="text-gray-600 hover:text-gray-900">Home</a>
+            <Link
+                to="/Dashboard"
+                className="text-gray-600 hover:text-gray-900"
+              >
+                Home
+              </Link>
               <a href="#features" className="text-gray-600 hover:text-gray-900">Features</a>
               <a href="#about" className="text-gray-600 hover:text-gray-900">About Us</a>
               <Link
-                to="/dashboard"
+                to="/login"
                 className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
               >
                 Sign Up
@@ -45,7 +50,7 @@ const LandingPage: React.FC = () => {
             <div className="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
               <div className="rounded-md shadow">
                 <Link
-                  to="/dashboard"
+                  to="/login"
                   className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10"
                 >
                   Get Started
