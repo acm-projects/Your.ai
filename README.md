@@ -239,3 +239,5 @@ Managing schedules and finding time for yourself can be difficult as a universit
 <h2>🎊Industry Mentor🎊</h2>
 <h3>Linh Ly</h3><br/>
 <div />
+
+![image](https://drive.google.com/uc?export=view&id=1SE4U07CcaWATp6UfuSIa9xOU6RVxgtjb)
