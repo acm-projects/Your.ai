@@ -17,6 +17,11 @@ llm = ChatOpenAI(
     openai_api_base=os.getenv("DEEPSEEK_API_BASE"),
     model="deepseek-chat"
 )
+
+#llm = ChatOpenAI(
+#    openai_api_key=os.getenv("OPENAI_API_KEY"),
+#    model="gpt-4-turbo"
+#)
 embedder = OpenAIEmbeddings(openai_api_key=os.getenv("OPENAI_API_KEY"))
 
 
