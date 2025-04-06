@@ -1,30 +1,23 @@
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import Homepage from './homepage';
-import About from './About';
-import './App.css';
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 
-function App() {
+import LandingPage from "./components/LandingPage";
+import Dashboard from "./components/Dashboard";
+import Tasks from "./components/Tasks";
+import Notifications from "./components/Notifications";
+import Login from "./components/Login";
+import Chatbot from "./components/Chatbot";
+
+const App: React.FC = () => {
   return (
-    <Router>
-      <div>
-        {/* Navigation Buttons */}
-        <nav>
-          <Link to="/">
-            <button>Home</button>
-          </Link>
-          <Link to="/about">
-            <button>About</button>
-          </Link>
-        </nav>
-
-        {/* Page Content */}
-        <Routes>
-          <Route path="/" element={<Homepage />} />
-          <Route path="/about" element={<About />} />
-        </Routes>
-      </div>
-    </Router>
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/dashboard" element={<><Dashboard /><Chatbot /></>} />
+      <Route path="/tasks" element={<Tasks />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
-}
+};
 
 export default App;
