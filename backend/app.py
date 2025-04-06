@@ -9,17 +9,20 @@ app = Flask(__name__)
 SERVICE_ACCOUNT_FILE = "yourai-452203-92e5dc3d05ad.json"
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
-# Authenticate and initialize Google Calendar API
-credentials = service_account.Credentials.from_service_account_file(
-    SERVICE_ACCOUNT_FILE, scopes=SCOPES
-)
-service = build("calendar", "v3", credentials=credentials)
-print(":white_check_mark: Google Calendar API Authenticated Successfully!")
+def initialize_calendar_service():
+    """Initialize and return the Google Calendar service."""
+    credentials = service_account.Credentials.from_service_account_file(
+        SERVICE_ACCOUNT_FILE, scopes=SCOPES
+    )
+    service = build("calendar", "v3", credentials=credentials)
+    print(":white_check_mark: Google Calendar API Authenticated Successfully!")
+    return service
 
 # Get all events
 @app.route("/events", methods=["GET"])
 def get_events():
     try:
+        service = initialize_calendar_service()
         # Fetch events from Google Calendar
         events_result = service.events().list(
             calendarId="primary", 
@@ -45,6 +48,7 @@ def get_events():
 @app.route("/events", methods=["POST"])
 def create_event():
     try:
+        service = initialize_calendar_service()
         data = request.json
         # Ensure all required fields are provided
         if not data.get("summary") or not data.get("start") or not data.get("end"):
@@ -67,6 +71,7 @@ def create_event():
 @app.route("/events/<event_id>", methods=["PUT"])
 def update_event(event_id):
     try:
+        service = initialize_calendar_service()
         data = request.json
         
         # Get the existing event details
@@ -87,6 +92,7 @@ def update_event(event_id):
 @app.route("/events/<event_id>", methods=["DELETE"])
 def delete_event(event_id):
     try:
+        service = initialize_calendar_service()
         # Delete event from Google Calendar
         service.events().delete(calendarId="primary", eventId=event_id).execute()
         return jsonify({"message": "Event deleted successfully"}), 200
@@ -101,3 +107,4 @@ def current_time():
 
 if __name__ == "__main__":
     app.run(debug=True)
+    
