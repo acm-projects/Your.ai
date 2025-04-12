@@ -4,6 +4,7 @@ from pinecone import Pinecone
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from dotenv import load_dotenv
 import re
+import requests
 
 load_dotenv()
 
@@ -34,7 +35,7 @@ def query_pinecone(query):
     return "\n\n".join(retrieved_texts)
 
 def format_response(response):
-    import json
+    #import json
 
     response_text = response.get('text', '') if hasattr(response, 'get') else str(response)
 
@@ -99,28 +100,63 @@ def ask_questions(llm, questions):
         prompt = f"{context}\n\n{relevant_data}\n\nQuestion: {question}"
         response = llm.invoke(prompt)
         
-        # Format the response before printing
-        #formatted_response = format_response(response)
-        
-        # Print the formatted JSON response (this can be used in Flask API request)
+        # Print the formatted JSON response
         print(f"\nQuestion: {question}\n")
         formatted_response = format_response(response)
-        #print(formatted_response)
+
+    # return data from the calendar api
+    dummy_calendar_response = {
+        "items": [
+            # Monday
+            {
+                "summary": "Team standup",
+                "start": {"dateTime": "2025-04-14T09:00:00-05:00"},
+                "end": {"dateTime": "2025-04-14T09:30:00-05:00"}
+            },
+            {
+                "summary": "Work session",
+                "start": {"dateTime": "2025-04-14T13:00:00-05:00"},
+                "end": {"dateTime": "2025-04-14T16:00:00-05:00"}
+            },
+            # Tuesday
+            {
+                "summary": "Doctor's appointment",
+                "start": {"dateTime": "2025-04-15T10:00:00-05:00"},
+                "end": {"dateTime": "2025-04-15T11:00:00-05:00"}
+            },
+            # Wednesday
+            {
+                "summary": "Gym",
+                "start": {"dateTime": "2025-04-16T18:00:00-05:00"},
+                "end": {"dateTime": "2025-04-16T19:00:00-05:00"}
+            },
+            # Thursday
+            {
+                "summary": "Group project meeting",
+                "start": {"dateTime": "2025-04-17T14:00:00-05:00"},
+                "end": {"dateTime": "2025-04-17T15:00:00-05:00"}
+            },
+            # Friday (free!)
+        ]
+    }
+
+    # Prompt the LLM to interpret the dummy response using the original question
+    interpret_prompt = (
+        "You have received the following JSON data from the Google Calendar API "
+        "in response to the request you just generated. Based on this data and the user's original question, "
+        "provide a clear and helpful natural language response.\n\n"
+        f"User's Question: {question}\n\n"
+        f"API Response JSON: {json.dumps(dummy_calendar_response, indent=4)}"
+    )
+
+    final_response = llm.invoke(interpret_prompt)
+    print("\nLLM's Interpretation of Calendar Data:\n")
+    print(final_response.content if hasattr(final_response, 'content') else final_response)
+
 
 # Sample questions
 questions = [
     "What day of the week am I most free?",
-    "I want to add an event called 'grocery shopping' to my calendar from 2 - 3 PM this friday.",
-    "I need to reschedule grocery shopping to 4 - 5 PM this friday.",
-    "Delete grocery shopping from my calendar for this friday.",
-    "What do I have going on this week? Give me a weekly overview of my events.",
-    "What events do I have going on this friday?",
-    "Remind me that I am going grocery shopping this friday 30 minutes before the event.",
-    "What events have I been invited to this week?",
-    "How many events do I have going on today?",
-    "How much free time do I have in between grocery shopping and dinner this friday?",
-    "Do I have any doctor's appointments this week?",
-    "Change the location for grocery shopping this friday."
 ]
 
 ask_questions(llm, questions)
