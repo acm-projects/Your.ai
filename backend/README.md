@@ -52,7 +52,8 @@ Managing schedules and finding time for yourself can be difficult as a universit
 
 * Flask back-end server
   * [OAuth-based Authentication in Flask](https://syscrews.medium.com/oauth-based-authentication-in-flask-3569746002ba)
-  * [Flask + OpenAI GPT](https://medium.com/@abed63/flask-application-with-openai-chatgpt-integration-tutorial-958588ac6bdf)  * 
+  * [Flask + OpenAI GPT](https://medium.com/@abed63/flask-application-with-openai-chatgpt-integration-tutorial-958588ac6bdf)
+  * [Python Package guide](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/) 
 * Alternative to Flask - Node.js server using Express.js
   * [Official Express.js Documentation / Setup](https://expressjs.com/en/starter/installing.html)
   * [Dave Gray Intro to Express.js](https://www.youtube.com/watch?v=jivyItmsu18&ab_channel=DaveGray)
@@ -238,3 +239,5 @@ Managing schedules and finding time for yourself can be difficult as a universit
 <h2>🎊Industry Mentor🎊</h2>
 <h3>Linh Ly</h3><br/>
 <div />
+
+![image](https://drive.google.com/uc?export=view&id=1SE4U07CcaWATp6UfuSIa9xOU6RVxgtjb)
