@@ -18,6 +18,10 @@ def initialize_calendar_service():
     print(":white_check_mark: Google Calendar API Authenticated Successfully!")
     return service
 
+@app.route('/hello')
+def hello():
+    print('hello')
+
 # Get all events
 @app.route("/events", methods=["GET"])
 def get_events():
@@ -47,9 +51,11 @@ def get_events():
 # Create an event
 @app.route("/events", methods=["POST"])
 def create_event():
+    print("Hello")
     try:
         service = initialize_calendar_service()
         data = request.json
+        print(data)
         # Ensure all required fields are provided
         if not data.get("summary") or not data.get("start") or not data.get("end"):
             return jsonify({"error": "Missing required fields: 'summary', 'start', or 'end'."}), 400
@@ -57,8 +63,8 @@ def create_event():
         # Create event object
         event = {
             "summary": data.get("summary"),
-            "start": {"dateTime": data.get("start"), "timeZone": "UTC"},
-            "end": {"dateTime": data.get("end"), "timeZone": "UTC"},
+            "start": {"dateTime": data.get("start").get("dateTime"), "timeZone": "UTC"},
+            "end": {"dateTime": data.get("end").get("dateTime"), "timeZone": "UTC"},
         }
         
         # Insert event into calendar
@@ -106,5 +112,4 @@ def current_time():
     return jsonify({"current_time": current_time})
 
 if __name__ == "__main__":
-    app.run(debug=True)
-    
+    app.run(host='0.0.0.0', port=5001, threaded=True)
