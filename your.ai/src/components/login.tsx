@@ -1,17 +1,20 @@
-import React from 'react';
-import { useGoogleLogin } from '@react-oauth/google';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import { useGoogleLogin } from "@react-oauth/google";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../components/AuthContext";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-
+  const { setToken } = useAuth(); 
   const login = useGoogleLogin({
+    scope: "https://www.googleapis.com/auth/calendar",
     onSuccess: (tokenResponse) => {
-      console.log(tokenResponse);
-      navigate('/dashboard');
+      console.log("Credential Response:", tokenResponse);
+      setToken(tokenResponse.access_token); 
+      navigate("/dashboard");
     },
     onError: () => {
-      console.log('Login Failed');
+      console.log("Login Failed");
     },
   });
 
