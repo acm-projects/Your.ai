@@ -1,191 +1,160 @@
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import FullCalendar from "@fullcalendar/react";
-import dayGridPlugin from "@fullcalendar/daygrid";
-import dayjs, { Dayjs } from "dayjs";
-import DayView from "./DayView";
-import Weekly from "./Weekly";
+import { CalendarClock, Clock, ListTodo, Calendar } from "lucide-react";
+import WeeklyCalendar from "./weeklyCalendar";
+import UpcomingEvents from "../components/UpcomingEvents";
+import WeeklySummary from "../components/WeeklySummary";
+import TaskBoard from "./taskBoard";
+import Sidebar from "./Sidebar"; 
 
-interface Event {
-  id: string;
+type StatsCardProps = {
   title: string;
-  time: string;
-  attendees: number;
-  type: "meeting" | "task" | "session";
-  date: string;
+  value: string | number;
+  icon: React.ReactNode;
+  subtitle: string;
+};
+
+function StatsCard({ title, value, icon, subtitle }: StatsCardProps) {
+  return (
+    <div className="rounded-2xl border bg-white shadow-md hover:shadow-lg transition-shadow duration-300">
+      <div className="flex items-center justify-between p-5">
+        <h3 className="text-sm font-semibold text-gray-700">{title}</h3>
+        {icon}
+      </div>
+      <div className="px-5 pb-5 pt-0">
+        <div className="text-3xl font-bold text-blue-600">{value}</div>
+        <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
+      </div>
+    </div>
+  );
 }
 
-const Dashboard: React.FC = () => {
-  const [view, setView] = useState<"Day" | "Weekly" | "Monthly">("Weekly");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedDate, setSelectedDate] = useState<Dayjs | null>(dayjs());
-  const [fetchedEvents, setFetchedEvents] = useState<Event[]>([]);
-  const [categories, setCategories] = useState({
-    "School Work": true,
-    Organization: true,
-    Gym: false,
-    Groceries: false,
-    Research: false,
-  });
+type SectionCardProps = {
+  title: string;
+  subtitle: string;
+  children: React.ReactNode;
+  className?: string;
+};
 
-  const handleCategoryChange = (key: string) => {
-    setCategories({ ...categories, [key]: !categories[key] });
-  };
-
-  useEffect(() => {
-    const fetchCalendarEvents = async () => {
-      try {
-        const response = await fetch("http://localhost:5000/events");
-        const data = await response.json();
-
-        const formatted: Event[] = data.map((item: any, idx: number) => {
-          const startTime = item.start?.split("T")[1]?.substring(0, 5) || "00:00";
-          const endTime = item.end?.split("T")[1]?.substring(0, 5) || "00:00";
-
-          return {
-            id: String(idx),
-            title: item.summary || "No Title",
-            time: `${startTime} - ${endTime}`,
-            attendees: 1,
-            type: "meeting", 
-            date: item.start?.split("T")[0],
-          };
-        });
-
-        setFetchedEvents(formatted);
-      } catch (error) {
-        console.error("Error fetching events:", error);
-      }
-    };
-
-    fetchCalendarEvents();
-  }, []);
-
-  const filteredEvents = fetchedEvents.filter((event) =>
-    event.title.toLowerCase().includes(searchTerm.toLowerCase())
+function SectionCard({
+  title,
+  subtitle,
+  children,
+  className = "",
+}: SectionCardProps) {
+  return (
+    <div
+      className={`rounded-2xl border bg-white shadow-md hover:shadow-lg transition-shadow duration-300 ${className}`}
+    >
+      <div className="p-6 border-b">
+        <h3 className="text-lg font-bold text-gray-800">{title}</h3>
+        <p className="text-sm text-gray-500">{subtitle}</p>
+      </div>
+      <div className="p-6">{children}</div>
+    </div>
   );
+}
 
-  const dayViewEvents = filteredEvents.map((event) => {
-    const start = parseInt(event.time.split(":")[0], 10);
-    const end = start + 1; 
-    return { id: event.id, title: event.title, startTime: String(start), endTime: String(end) };
-  });
-
+export default function Tasks() {
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-gray-800">
       {/* Sidebar */}
-      <aside className="w-64 bg-white shadow-lg border-r">
-        {/* Sidebar content */}
-        <div className="p-5 flex items-center space-x-2">
-          <img src="/react.svg" alt="Your.ai" className="h-8 w-8" />
-          <span className="text-xl font-bold text-indigo-600">Your.ai</span>
+      <Sidebar/>
+
+      {/* Main Content Area */}
+      <div className="flex-1 space-y-6 p-4 md:p-8 bg-gray-50 overflow-y-auto">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 px-2 py-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-gray-800">
+              Dashboard
+            </h1>
+            <p className="text-gray-500">
+              Welcome back! Here's an overview of your week.
+            </p>
+          </div>
+          <button className="inline-flex items-center gap-2 rounded-md text-sm font-medium bg-blue-600 text-white h-10 px-4 py-2 hover:bg-blue-700 transition-colors">
+            <CalendarClock className="h-4 w-4" />
+            Add Event
+          </button>
         </div>
-        <nav className="mt-8 text-sm">
-          <div className="px-4 text-gray-500 uppercase tracking-wide text-xs">Main Menu</div>
-          <ul className="mt-4 space-y-1">
-            <li>
-              <Link to="/dashboard" className="flex items-center px-4 py-2 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600">
-                <i className="fas fa-th-large mr-3"></i> Dashboard
-              </Link>
-            </li>
-            <li>
-              <span className="flex items-center px-4 py-2 bg-indigo-50 text-indigo-600">
-                <i className="fas fa-calendar-alt mr-3"></i> My Calendar
-              </span>
-            </li>
-            <li>
-              <Link to="/newsletter" className="flex items-center px-4 py-2 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600">
-                Newsletter
-              </Link>
-            </li>
-            <li>
-              <Link to="/kanban" className="flex items-center px-4 py-2 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600">
-                Kanban
-              </Link>
-            </li>
-            <li>
-              <Link to="/tasks" className="block bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-center">
-                Tasks
-              </Link>
-            </li>
-          </ul>
-        </nav>
-      </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-auto">
-        <header className="bg-white shadow-sm">
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-semibold">My Calendar</h1>
-              <div className="flex space-x-2">
-                {["Day", "Weekly", "Monthly"].map((viewType) => (
-                  <button
-                    key={viewType}
-                    onClick={() => setView(viewType as any)}
-                    className={`px-4 py-1 text-sm rounded-md ${
-                      view === viewType ? "bg-indigo-50 text-indigo-600" : "text-gray-600 hover:bg-gray-100"
-                    }`}
-                  >
-                    {viewType}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </header>
+        {/* Stats Cards */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <StatsCard
+            title="Today's Events"
+            value={3}
+            subtitle="Next: Team Meeting at 10:00 AM"
+            icon={<Calendar className="h-5 w-5 text-blue-500" />}
+          />
+          <StatsCard
+            title="Free Time"
+            value="4.5h"
+            subtitle="Today between 1:00 PM - 5:30 PM"
+            icon={<Clock className="h-5 w-5 text-green-500" />}
+          />
+          <StatsCard
+            title="Pending Tasks"
+            value={8}
+            subtitle="3 due today"
+            icon={<ListTodo className="h-5 w-5 text-red-500" />}
+          />
+          <StatsCard
+            title="Week Progress"
+            value="40%"
+            subtitle="2 of 5 days completed"
+            icon={
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                className="h-5 w-5 text-purple-500"
+              >
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+              </svg>
+            }
+          />
+        </div>
 
-        <main className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-semibold flex items-center">
-              {selectedDate?.format("MMMM YYYY")}
-              <button className="ml-3 text-gray-400 hover:text-gray-600">
-                <i className="fas fa-pen"></i>
-              </button>
-            </h2>
-            <div className="relative w-64">
-              <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-          </div>
+        {/* Weekly Calendar and Upcoming Events */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+          <SectionCard
+            title="Week at a Glance"
+            subtitle="Your schedule for this week"
+            className="col-span-4"
+          >
+            <WeeklyCalendar />
+          </SectionCard>
 
-          {view === "Monthly" ? (
-            <FullCalendar
-              plugins={[dayGridPlugin]}
-              initialView="dayGridMonth"
-              events={filteredEvents.map((event) => ({
-                title: event.title,
-                date: event.date,
-              }))}
-            />
-          ) : view === "Day" ? (
-            <div className="h-[calc(100vh-100px)] w-full">
-              <DayView
-                date={selectedDate?.toDate() || new Date()}
-                setDate={(d) => setSelectedDate(dayjs(d))}
-                events={dayViewEvents}
-                onNewEvent={() => alert("New event clicked")}
-              />
-            </div>
-          ) : view === "Weekly" ? (
-            <Weekly
-              filteredEvents={filteredEvents}
-              selectedDate={selectedDate}
-              setSelectedDate={setSelectedDate}
-              categories={categories}
-              handleCategoryChange={handleCategoryChange}
-            />
-          ) : null}
-        </main>
-      </main>
+          <SectionCard
+            title="Upcoming Events"
+            subtitle="Your next appointments and deadlines"
+            className="col-span-3"
+          >
+            <UpcomingEvents />
+          </SectionCard>
+        </div>
+
+        {/* Weekly Summary and Task Board */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+          <SectionCard
+            title="Weekly Summary"
+            subtitle="Time management suggestions"
+            className="col-span-3"
+          >
+            <WeeklySummary />
+          </SectionCard>
+
+          <SectionCard
+            title="Task Board"
+            subtitle="Manage your to-do list"
+            className="col-span-4"
+          >
+            <TaskBoard />
+          </SectionCard>
+        </div>
+      </div>
     </div>
   );
-};
-
-export default Dashboard;
+}

@@ -9,24 +9,17 @@ app = Flask(__name__)
 SERVICE_ACCOUNT_FILE = "yourai-452203-92e5dc3d05ad.json"
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
-def initialize_calendar_service():
-    """Initialize and return the Google Calendar service."""
-    credentials = service_account.Credentials.from_service_account_file(
-        SERVICE_ACCOUNT_FILE, scopes=SCOPES
-    )
-    service = build("calendar", "v3", credentials=credentials)
-    print(":white_check_mark: Google Calendar API Authenticated Successfully!")
-    return service
-
-@app.route('/hello')
-def hello():
-    print('hello')
+# Authenticate and initialize Google Calendar API
+credentials = service_account.Credentials.from_service_account_file(
+    SERVICE_ACCOUNT_FILE, scopes=SCOPES
+)
+service = build("calendar", "v3", credentials=credentials)
+print(":white_check_mark: Google Calendar API Authenticated Successfully!")
 
 # Get all events
 @app.route("/events", methods=["GET"])
 def get_events():
     try:
-        service = initialize_calendar_service()
         # Fetch events from Google Calendar
         events_result = service.events().list(
             calendarId="primary", 
@@ -51,11 +44,8 @@ def get_events():
 # Create an event
 @app.route("/events", methods=["POST"])
 def create_event():
-    print("Hello")
     try:
-        service = initialize_calendar_service()
         data = request.json
-        print(data)
         # Ensure all required fields are provided
         if not data.get("summary") or not data.get("start") or not data.get("end"):
             return jsonify({"error": "Missing required fields: 'summary', 'start', or 'end'."}), 400
@@ -63,8 +53,8 @@ def create_event():
         # Create event object
         event = {
             "summary": data.get("summary"),
-            "start": {"dateTime": data.get("start").get("dateTime"), "timeZone": "UTC"},
-            "end": {"dateTime": data.get("end").get("dateTime"), "timeZone": "UTC"},
+            "start": {"dateTime": data.get("start"), "timeZone": "UTC"},
+            "end": {"dateTime": data.get("end"), "timeZone": "UTC"},
         }
         
         # Insert event into calendar
@@ -77,7 +67,6 @@ def create_event():
 @app.route("/events/<event_id>", methods=["PUT"])
 def update_event(event_id):
     try:
-        service = initialize_calendar_service()
         data = request.json
         
         # Get the existing event details
@@ -98,7 +87,6 @@ def update_event(event_id):
 @app.route("/events/<event_id>", methods=["DELETE"])
 def delete_event(event_id):
     try:
-        service = initialize_calendar_service()
         # Delete event from Google Calendar
         service.events().delete(calendarId="primary", eventId=event_id).execute()
         return jsonify({"message": "Event deleted successfully"}), 200
@@ -112,4 +100,4 @@ def current_time():
     return jsonify({"current_time": current_time})
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5001, threaded=True)
+    app.run(debug=True)

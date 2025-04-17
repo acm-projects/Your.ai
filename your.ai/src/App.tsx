@@ -7,15 +7,14 @@ import Chatbot from './components/chatbot';
 import Login from './components/login';
 import SpeechToText from './components/speech-to-text';
 import TextToSpeech from './components/text-to-speech';
-import Tasks from './components/tasks'; 
+import Calendar from './components/calendar'; 
 
 const App: React.FC = () => {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
-      
       <Route path="/login" element={<Login />} />
-      
+
       <Route
         path="/dashboard"
         element={
@@ -28,12 +27,11 @@ const App: React.FC = () => {
         }
       />
 
-      <Route path="/tasks" element={<Tasks />} />
-      
+
+      <Route path="/calendar" element={<Calendar />} />
+
       <Route path="/newsletter" element={<Newsletter onClose={() => {}} />} />
-      
       <Route path="/kanban" element={<Kanban />} />
-      
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

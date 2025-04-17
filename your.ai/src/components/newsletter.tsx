@@ -1,201 +1,576 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import WeatherWidget from "./WeatherWidget";
+"use client"
 
-const upcomingTasks = [
-  { task: "ACM Meeting", color: "bg-blue-700" },
-  { task: "Research Paper", color: "bg-blue-600" },
-  { task: "Job Application", color: "bg-blue-500" },
-];
+import { useState, useEffect, useRef } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { useNavigate } from "react-router-dom"
 
-const accomplishments = ["5K Marathon", "Daily Gym", "CS Homework"];
+// Add TypeScript declaration for the Tomorrow.io widget
+declare global {
+  interface Window {
+    __TOMORROW__?: {
+      renderWidget: () => void
+    }
+  }
+}
 
-const taskStatus = {
-  completed: ["Math Homework", "Client Project"],
-  inProgress: ["Website Redesign"],
-  toStart: ["New Research Paper"],
-};
+// Sample data
+const weeklySchedule = [
+  {
+    day: "Monday",
+    date: "April 15",
+    events: [
+      { time: "9:00 AM", title: "Team Standup", category: "work", location: "Conference Room A" },
+      { time: "1:00 PM", title: "Project Review", category: "work", location: "Zoom Meeting" },
+      { time: "6:30 PM", title: "Gym Session", category: "health", location: "Fitness Center" },
+    ],
+  },
+  {
+    day: "Tuesday",
+    date: "April 16",
+    events: [
+      { time: "10:00 AM", title: "Client Meeting", category: "work", location: "Client Office" },
+      { time: "3:00 PM", title: "Research Time", category: "school", location: "Library" },
+    ],
+  },
+  {
+    day: "Wednesday",
+    date: "April 17",
+    events: [
+      { time: "9:30 AM", title: "ACM Meeting", category: "school", location: "CS Building" },
+      { time: "2:00 PM", title: "Study Group", category: "school", location: "Student Center" },
+      { time: "7:00 PM", title: "Dinner with Friends", category: "personal", location: "Downtown Restaurant" },
+    ],
+  },
+  {
+    day: "Thursday",
+    date: "April 18",
+    events: [
+      { time: "11:00 AM", title: "Job Interview", category: "career", location: "Tech Company HQ" },
+      { time: "4:00 PM", title: "Research Paper Work", category: "school", location: "Home Office" },
+    ],
+  },
+  {
+    day: "Friday",
+    date: "April 19",
+    events: [
+      { time: "9:00 AM", title: "Weekly Planning", category: "work", location: "Home Office" },
+      { time: "12:00 PM", title: "Lunch with Mentor", category: "career", location: "Cafe" },
+      { time: "5:00 PM", title: "Happy Hour", category: "personal", location: "Local Bar" },
+    ],
+  },
+  {
+    day: "Saturday",
+    date: "April 20",
+    events: [
+      { time: "10:00 AM", title: "Morning Run", category: "health", location: "City Park" },
+      { time: "2:00 PM", title: "Grocery Shopping", category: "personal", location: "Supermarket" },
+    ],
+  },
+  {
+    day: "Sunday",
+    date: "April 21",
+    events: [
+      { time: "11:00 AM", title: "Brunch", category: "personal", location: "Cafe" },
+      { time: "3:00 PM", title: "Prep for Week", category: "personal", location: "Home" },
+    ],
+  },
+]
 
-const ProgressRings = () => {
-  const categories = [
-    { label: "School", progress: 70, color: "#4F46E5" },
-    { label: "Work", progress: 50, color: "#10B981" },
-    { label: "Health", progress: 80, color: "#F59E0B" },
-  ];
-  const [visibleRing, setVisibleRing] = useState<number>(-1);
+const timeManagementTips = [
+  {
+    title: "Focus Blocks",
+    description:
+      "Schedule 90-minute focus blocks for deep work on Tuesday and Thursday mornings when you have fewer meetings.",
+    icon: "🧠",
+  },
+  {
+    title: "Exercise Routine",
+    description:
+      "You have consistent gym time on Monday. Consider adding another session on Thursday or Friday for balance.",
+    icon: "💪",
+  },
+  {
+    title: "Social Balance",
+    description:
+      "You have social activities planned for Wednesday and Friday. Great job balancing work and personal life!",
+    icon: "🤝",
+  },
+  {
+    title: "Career Development",
+    description: "Thursday's job interview is a priority. Block out 2 hours before for preparation and review.",
+    icon: "📈",
+  },
+]
+
+const weeklyHighlights = [
+  { title: "Job Interview", day: "Thursday", category: "career", priority: "high" },
+  { title: "ACM Meeting", day: "Wednesday", category: "school", priority: "medium" },
+  { title: "Research Paper Work", day: "Thursday", category: "school", priority: "medium" },
+]
+
+const categoryColors = {
+  work: { bg: "bg-blue-500", text: "text-blue-50", light: "bg-blue-100", icon: "💼" },
+  school: { bg: "bg-purple-500", text: "text-purple-50", light: "bg-purple-100", icon: "🎓" },
+  health: { bg: "bg-green-500", text: "text-green-50", light: "bg-green-100", icon: "🏋️" },
+  personal: { bg: "bg-amber-500", text: "text-amber-50", light: "bg-amber-100", icon: "🌟" },
+  career: { bg: "bg-rose-500", text: "text-rose-50", light: "bg-rose-100", icon: "💻" },
+}
+
+const priorityColors = {
+  high: "bg-red-500",
+  medium: "bg-amber-500",
+  low: "bg-blue-500",
+}
+
+const Newsletter = () => {
+  const navigate = useNavigate()
+  const [isLoading, setIsLoading] = useState(true)
+  const [currentView, setCurrentView] = useState("week") // 'week' or 'day'
+  const [selectedDay, setSelectedDay] = useState(weeklySchedule[0])
+
+  const weatherWidgetRef = useRef(null)
 
   useEffect(() => {
-    categories.forEach((_, index) => {
-      setTimeout(() => setVisibleRing(index), index * 500);
-    });
-  }, []);
+    // Only load the script once
+    if (!document.getElementById("tomorrow-sdk")) {
+      const script = document.createElement("script")
+      script.id = "tomorrow-sdk"
+      script.src = "https://www.tomorrow.io/v1/widget/sdk/sdk.bundle.min.js"
+      script.async = true
+      script.onload = () => {
+        if (window.__TOMORROW__) {
+          window.__TOMORROW__.renderWidget()
+        }
+      }
+      document.body.appendChild(script)
+    } else if (window.__TOMORROW__) {
+      window.__TOMORROW__.renderWidget()
+    }
 
-  return (
-    <div className="flex justify-center items-center my-10 relative">
-      <svg width="500" height="500" viewBox="0 0 500 500">
-        {categories.map((category, index) => {
-          const radius = 120 + index * 50;
-          const strokeWidth = 25;
-          const circumference = 2 * Math.PI * radius;
-          const strokeDashoffset =
-            circumference - (category.progress / 100) * circumference;
-
-          return (
-            <g key={category.label}>
-              <circle
-                cx="250"
-                cy="250"
-                r={radius}
-                stroke={category.color}
-                strokeWidth={strokeWidth}
-                fill="none"
-                strokeDasharray={circumference}
-                strokeDashoffset={
-                  visibleRing >= index ? strokeDashoffset : circumference
-                }
-                strokeLinecap="round"
-                className="transition-all duration-700 ease-in-out"
-              />
-            </g>
-          );
-        })}
-      </svg>
-    </div>
-  );
-};
-
-export default function Dashboard() {
-  const [visibleSection, setVisibleSection] = useState<number>(0);
-  const navigate = useNavigate(); // ✅ added navigate
-
-  useEffect(() => {
-    const handleScroll = (e: any) => {
-      const scrollY = e.target.scrollTop;
-      const sectionHeight = window.innerHeight;
-      const newSection = Math.floor(scrollY / sectionHeight);
-      setVisibleSection(newSection);
-    };
-
-    document
-      .getElementById("popup-content")
-      ?.addEventListener("scroll", handleScroll);
     return () => {
-      document
-        .getElementById("popup-content")
-        ?.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
+      // Cleanup if needed
+      const script = document.getElementById("tomorrow-sdk")
+      if (script && script.parentNode) {
+        // Only remove if component unmounts
+        // script.parentNode.removeChild(script)
+      }
+    }
+  }, [])
 
-  return (
-    <div className="fixed inset-0 bg-black/30 flex justify-center items-center z-50">
-      <div className="bg-white text-black rounded-lg w-3/4 h-4/5 overflow-hidden relative shadow-lg">
-        <button
-          className="absolute top-4 right-4 text-black text-2xl"
-          onClick={() => navigate("/dashboard")}
-        >
-          ✖
-        </button>
+  useEffect(() => {
+    // Simulate loading
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 1000)
 
-        <div
-          id="popup-content"
-          className="w-full h-full overflow-y-auto snap-mandatory snap-y scrollbar-hidden"
-        >
-          <section className="w-full h-[80vh] flex flex-col justify-center items-center snap-start transition-all duration-700 mt-40">
-            <h2 className="text-5xl font-bold text-black mb-10">
-              Progress Overview
-            </h2>
-            <ProgressRings />
-          </section>
+    return () => clearTimeout(timer)
+  }, [])
 
-          <section className="w-full h-[80vh] flex flex-col justify-center items-center snap-start transition-all duration-700">
-            <h2 className="text-4xl font-bold text-black mb-10">
-              Upcoming This Week
-            </h2>
-            <div className="space-y-8">
-              {upcomingTasks.map((task, index) => (
-                <div
-                  key={index}
-                  className={`px-10 py-6 rounded-full shadow-xl text-3xl font-semibold ${task.color} text-white`}
-                >
-                  {task.task}
-                </div>
-              ))}
-            </div>
-          </section>
+  const handleDayClick = (day) => {
+    setSelectedDay(day)
+    setCurrentView("day")
+  }
 
-          {/* Section: Weather Forecast */}
-          <section className="w-full h-[80vh] flex flex-col justify-center items-center snap-start transition-all duration-700">
-            <h2 className="text-4xl font-bold text-black mb-10">
-              Live Weather Forecast
-            </h2>
-            <div className="w-full max-w-3xl px-4">
-              <WeatherWidget />
-            </div>
-          </section>
-
-          {/* Section: Accomplishments */}
-          <section className="w-full h-[80vh] flex flex-col justify-center items-center snap-start transition-all duration-700">
-            <h2 className="text-4xl font-bold text-black mb-10">
-              Last Week You Accomplished
-            </h2>
-            <ul className="flex flex-col items-center gap-6">
-              {accomplishments.map((item, index) => (
-                <li
-                  key={index}
-                  className="px-10 py-6 bg-blue-700 rounded-full shadow-xl text-3xl font-semibold text-white"
-                >
-                  ⭐ {item}
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          {/* Section: Task Status */}
-          <section className="w-full h-[80vh] flex flex-col justify-center items-center snap-start transition-all duration-700">
-            <h2 className="text-4xl font-bold text-black mb-10">Task Status</h2>
-            <div className="w-full max-w-4xl grid grid-cols-3 gap-8">
-              <div className="p-6 bg-gray-100 rounded-lg border border-gray-300 shadow-md">
-                <div className="text-2xl font-semibold text-gray-700">
-                  ✅ Completed
-                </div>
-                <ul className="text-lg mt-2 text-gray-600">
-                  {taskStatus.completed.map((task, index) => (
-                    <li key={index} className="py-2">
-                      {task}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="p-6 bg-gray-100 rounded-lg border border-gray-300 shadow-md">
-                <div className="text-2xl font-semibold text-gray-700">
-                  🕒 In Progress
-                </div>
-                <ul className="text-lg mt-2 text-gray-600">
-                  {taskStatus.inProgress.map((task, index) => (
-                    <li key={index} className="py-2">
-                      {task}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="p-6 bg-gray-100 rounded-lg border border-gray-300 shadow-md">
-                <div className="text-2xl font-semibold text-gray-700">
-                  🚀 To Start
-                </div>
-                <ul className="text-lg mt-2 text-gray-600">
-                  {taskStatus.toStart.map((task, index) => (
-                    <li key={index} className="py-2">
-                      {task}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </section>
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 bg-black/30 flex justify-center items-center z-50">
+        <div className="bg-white text-black rounded-xl w-3/4 h-4/5 flex justify-center items-center">
+          <div className="flex flex-col items-center">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <h2 className="text-xl font-medium text-gray-700">Preparing your weekly newsletter...</h2>
+          </div>
         </div>
       </div>
+    )
+  }
+
+  return (
+    <div className="fixed inset-0 bg-gradient-to-br from-gray-900/40 to-blue-900/40 backdrop-blur-sm flex justify-center items-center z-50">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.3 }}
+        className="bg-white text-black rounded-2xl w-11/12 max-w-7xl h-[90vh] overflow-hidden relative shadow-2xl"
+      >
+        {/* Header */}
+        <div className="relative h-40 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 flex items-center justify-center overflow-hidden">
+          {/* Decorative elements */}
+          <div className="absolute top-0 left-0 w-full h-full opacity-20">
+            <div className="absolute top-5 left-10 w-32 h-32 rounded-full bg-white/20"></div>
+            <div className="absolute top-20 right-20 w-24 h-24 rounded-full bg-white/20"></div>
+            <div className="absolute -bottom-10 left-1/3 w-40 h-40 rounded-full bg-white/20"></div>
+          </div>
+
+          <div className="relative z-10 text-center px-4">
+            <h1 className="text-4xl md:text-5xl font-bold text-white">Your Weekly Digest</h1>
+            <p className="text-white/80 mt-2 text-lg">April 15 - April 21, 2025</p>
+          </div>
+
+          <button
+            className="absolute top-4 right-4 text-white/80 hover:text-white text-2xl transition-colors"
+            onClick={() => navigate("/dashboard")}
+          >
+            ✖
+          </button>
+        </div>
+
+        {/* Navigation */}
+        <div className="bg-gray-100 border-b border-gray-200 px-6 py-3 flex justify-between items-center">
+          <div className="flex space-x-4">
+            <button
+              onClick={() => setCurrentView("week")}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                currentView === "week" ? "bg-blue-100 text-blue-700 font-medium" : "text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              Week at a Glance
+            </button>
+            {currentView === "day" && (
+              <button className="px-4 py-2 rounded-lg bg-blue-100 text-blue-700 font-medium">
+                {selectedDay.day}'s Schedule
+              </button>
+            )}
+          </div>
+          <div className="text-gray-500 text-sm">Last updated: {new Date().toLocaleTimeString()}</div>
+        </div>
+
+        {/* Main content area - Increased bottom padding to ensure scrollability */}
+        <div className="h-[calc(90vh-10rem)] overflow-y-auto pb-20">
+          <AnimatePresence mode="wait">
+            {currentView === "week" ? (
+              <motion.div
+                key="week-view"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="p-6"
+              >
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Left column - Weekly calendar */}
+                  <div className="lg:col-span-2">
+                    <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+                      <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                        <h2 className="text-xl font-bold text-gray-800">This Week's Schedule</h2>
+                      </div>
+                      <div className="p-6">
+                        <div className="grid grid-cols-7 gap-4">
+                          {weeklySchedule.map((day, index) => (
+                            <motion.div
+                              key={day.day}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: index * 0.05 }}
+                              onClick={() => handleDayClick(day)}
+                              className="cursor-pointer group"
+                            >
+                              <div className="text-center mb-2">
+                                <div className="text-sm font-medium text-gray-500">{day.day.substring(0, 3)}</div>
+                                <div className="text-lg font-bold text-gray-800">{day.date.split(" ")[1]}</div>
+                              </div>
+                              <div className="bg-gray-50 rounded-lg p-3 h-32 overflow-y-auto border border-gray-200 transition-colors group-hover:border-blue-300 group-hover:bg-blue-50">
+                                {day.events.length > 0 ? (
+                                  day.events.map((event, idx) => (
+                                    <div
+                                      key={idx}
+                                      className={`mb-2 px-2 py-1 rounded text-xs ${categoryColors[event.category].bg} ${categoryColors[event.category].text} truncate`}
+                                    >
+                                      {event.time}: {event.title}
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="text-center text-gray-400 text-xs h-full flex items-center justify-center">
+                                    No events
+                                  </div>
+                                )}
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Weekly highlights */}
+                    <div className="mt-6 bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+                      <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                        <h2 className="text-xl font-bold text-gray-800">Weekly Highlights</h2>
+                      </div>
+                      <div className="p-6">
+                        <div className="space-y-4">
+                          {weeklyHighlights.map((highlight, index) => (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: index * 0.1 }}
+                              className="flex items-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+                            >
+                              <div className={`w-3 h-3 rounded-full ${priorityColors[highlight.priority]} mr-4`}></div>
+                              <div className="flex-1">
+                                <h3 className="font-medium text-gray-800">{highlight.title}</h3>
+                                <p className="text-gray-500 text-sm">{highlight.day}</p>
+                              </div>
+                              <div
+                                className={`px-3 py-1 rounded-full text-xs font-medium ${categoryColors[highlight.category].light} ${categoryColors[highlight.category].text.replace("text-blue-50", "text-blue-700").replace("text-purple-50", "text-purple-700").replace("text-green-50", "text-green-700").replace("text-amber-50", "text-amber-700").replace("text-rose-50", "text-rose-700")}`}
+                              >
+                                {highlight.category}
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    {/* Weather Widget - Ensure it has enough space */}
+                    <div className="mt-6 mb-10 bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+                      <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                        <h2 className="text-xl font-bold text-gray-800">Weather Forecast</h2>
+                      </div>
+                      <div className="p-6">
+                        <div ref={weatherWidgetRef} className="weather-container min-h-[400px]">
+                          <div
+                            className="tomorrow"
+                            data-location-id=""
+                            data-language="EN"
+                            data-unit-system="IMPERIAL"
+                            data-skin="light"
+                            data-widget-type="upcoming"
+                            style={{ paddingBottom: "22px", position: "relative" }}
+                          >
+                            <a
+                              href="https://www.tomorrow.io/weather-api/"
+                              rel="nofollow noopener noreferrer"
+                              target="_blank"
+                              style={{ position: "absolute", bottom: 0, transform: "translateX(-50%)", left: "50%" }}
+                            >
+                              <img
+                                alt="Powered by the Tomorrow.io Weather API"
+                                src="https://weather-website-client.tomorrow.io/img/powered-by.svg"
+                                width="250"
+                                height="18"
+                              />
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right column - Time management tips */}
+                  <div>
+                    <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+                      <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                        <h2 className="text-xl font-bold text-gray-800">Time Management Tips</h2>
+                      </div>
+                      <div className="p-6">
+                        <div className="space-y-6">
+                          {timeManagementTips.map((tip, index) => (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.2 + index * 0.1 }}
+                              className="bg-blue-50 rounded-lg p-4 border border-blue-100"
+                            >
+                              <div className="flex items-start">
+                                <div className="text-3xl mr-3">{tip.icon}</div>
+                                <div>
+                                  <h3 className="font-semibold text-gray-800">{tip.title}</h3>
+                                  <p className="text-gray-600 text-sm mt-1">{tip.description}</p>
+                                </div>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+
+                        {/* Weekly stats */}
+                        <div className="mt-8 pt-6 border-t border-gray-200">
+                          <h3 className="text-lg font-semibold text-gray-800 mb-4">Weekly Stats</h3>
+                          <div className="space-y-4">
+                            <div>
+                              <div className="flex justify-between text-sm mb-1">
+                                <span className="text-gray-600">Busiest day</span>
+                                <span className="font-medium text-gray-800">Wednesday (3 events)</span>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="flex justify-between text-sm mb-1">
+                                <span className="text-gray-600">Category breakdown</span>
+                              </div>
+                              <div className="flex h-4 rounded-full overflow-hidden">
+                                <div className="bg-blue-500 w-[30%]" title="Work: 30%"></div>
+                                <div className="bg-purple-500 w-[25%]" title="School: 25%"></div>
+                                <div className="bg-amber-500 w-[25%]" title="Personal: 25%"></div>
+                                <div className="bg-green-500 w-[10%]" title="Health: 10%"></div>
+                                <div className="bg-rose-500 w-[10%]" title="Career: 10%"></div>
+                              </div>
+                              <div className="flex text-xs mt-1 justify-between">
+                                <span className="text-blue-600">Work</span>
+                                <span className="text-purple-600">School</span>
+                                <span className="text-amber-600">Personal</span>
+                                <span className="text-green-600">Health</span>
+                                <span className="text-rose-600">Career</span>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="flex justify-between text-sm mb-1">
+                                <span className="text-gray-600">Free time blocks</span>
+                                <span className="font-medium text-gray-800">8 blocks (24h total)</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="day-view"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="p-6"
+              >
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    {selectedDay.day}, {selectedDay.date}
+                  </h2>
+                  <button
+                    onClick={() => setCurrentView("week")}
+                    className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  >
+                    ← Back to Week View
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2">
+                    <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+                      <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                        <h3 className="text-lg font-semibold text-gray-800">Schedule</h3>
+                      </div>
+                      <div className="divide-y divide-gray-100">
+                        {selectedDay.events.length > 0 ? (
+                          selectedDay.events.map((event, index) => (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: index * 0.1 }}
+                              className="p-4 hover:bg-gray-50"
+                            >
+                              <div className="flex items-start">
+                                <div className="w-20 text-right mr-6">
+                                  <div className="text-sm font-semibold text-gray-800">{event.time}</div>
+                                </div>
+                                <div
+                                  className={`w-1 self-stretch rounded-full ${categoryColors[event.category].bg} mr-4`}
+                                ></div>
+                                <div className="flex-1">
+                                  <div className="flex justify-between">
+                                    <h4 className="font-medium text-gray-800">{event.title}</h4>
+                                    <span
+                                      className={`px-2 py-1 rounded-full text-xs ${categoryColors[event.category].light} ${categoryColors[event.category].text.replace("text-blue-50", "text-blue-700").replace("text-purple-50", "text-purple-700").replace("text-green-50", "text-green-700").replace("text-amber-50", "text-amber-700").replace("text-rose-50", "text-rose-700")}`}
+                                    >
+                                      {event.category}
+                                    </span>
+                                  </div>
+                                  <p className="text-gray-500 text-sm mt-1">{event.location}</p>
+                                </div>
+                              </div>
+                            </motion.div>
+                          ))
+                        ) : (
+                          <div className="p-8 text-center text-gray-500">No events scheduled for this day.</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+                      <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                        <h3 className="text-lg font-semibold text-gray-800">Day Insights</h3>
+                      </div>
+                      <div className="p-6">
+                        <div className="space-y-4">
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-600 mb-2">Event Breakdown</h4>
+                            <div className="flex items-center space-x-2">
+                              <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                {selectedDay.events.length > 0 ? (
+                                  <div className="flex h-2.5 rounded-full">
+                                    {Object.entries(
+                                      selectedDay.events.reduce((acc, event) => {
+                                        acc[event.category] = (acc[event.category] || 0) + 1
+                                        return acc
+                                      }, {}),
+                                    ).map(([category, count], index) => (
+                                      <div
+                                        key={index}
+                                        className={`${categoryColors[category].bg}`}
+                                        style={{
+                                          width: `${(Number(count) / selectedDay.events.length) * 100}%`,
+                                        }}
+                                      ></div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="h-2.5 rounded-full bg-gray-300 w-full"></div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="pt-4">
+                            <h4 className="text-sm font-medium text-gray-600 mb-2">Free Time</h4>
+                            <p className="text-gray-800">
+                              {selectedDay.events.length > 0
+                                ? "You have approximately 6 hours of free time today."
+                                : "Your entire day is free!"}
+                            </p>
+                          </div>
+
+                          <div className="pt-4">
+                            <h4 className="text-sm font-medium text-gray-600 mb-2">Suggestions</h4>
+                            <ul className="space-y-2 text-sm text-gray-800">
+                              <li className="flex items-start">
+                                <span className="text-blue-500 mr-2">•</span>
+                                {selectedDay.events.length > 0
+                                  ? "Consider blocking 2 hours for focused work between your events."
+                                  : "This would be a great day to tackle a big project or task."}
+                              </li>
+                              <li className="flex items-start">
+                                <span className="text-blue-500 mr-2">•</span>
+                                {selectedDay.day === "Monday" || selectedDay.day === "Friday"
+                                  ? "Don't forget to plan for the week ahead."
+                                  : "Take short breaks between activities to stay refreshed."}
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Footer - Positioned at the bottom but not fixed to allow scrolling */}
+        <div className="h-10 bg-gray-50 border-t border-gray-200 flex items-center justify-between px-6">
+          <div className="text-gray-500 text-xs">© 2025 Your.ai Personal Assistant</div>
+          <div className="flex space-x-4">
+            <button className="text-blue-600 hover:text-blue-800 text-xs">Export</button>
+            <button className="text-blue-600 hover:text-blue-800 text-xs">Share</button>
+            <button className="text-blue-600 hover:text-blue-800 text-xs">Print</button>
+          </div>
+        </div>
+      </motion.div>
     </div>
-  );
+  )
 }
+
+export default Newsletter
