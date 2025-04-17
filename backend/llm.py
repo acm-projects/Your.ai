@@ -79,8 +79,25 @@ def format_response(response):
     return parsed_map
 
 
+def call_calendar_api(request_json, token):
+    method = request_json.get("methods")
+    url = request_json.get("URL")
+    params = request_json.get("params")
+
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+
+    response = requests.request(method, url, headers=headers, params=params)
+    try:
+        return response.json()
+    except Exception as e:
+        print("Failed to parse API response:", e)
+        return {}
+
+
 # Ask questions using data from Pinecone
-def ask_questions(llm, questions):
+def ask_questions(llm, question, token=None):
     # Define the context for the LLM
     context = (
         "You are an AI assistant designed to help people manage their day-to-day lives "
@@ -94,51 +111,25 @@ def ask_questions(llm, questions):
         "\n\n"
     )
 
+    relevant_data = query_pinecone(question)
+    prompt = f"{context}\n\n{relevant_data}\n\nQuestion: {question}"
+    response = llm.invoke(prompt)
 
-    for question in questions:
-        relevant_data = query_pinecone(question)
-        prompt = f"{context}\n\n{relevant_data}\n\nQuestion: {question}"
-        response = llm.invoke(prompt)
+    print(f"\nQuestion: {question}\n")
+    api_request_json = format_response(response)
+
+    api_response_data = call_calendar_api(api_request_json, token)
+
+#    for question in questions:
+#        relevant_data = query_pinecone(question)
+#        prompt = f"{context}\n\n{relevant_data}\n\nQuestion: {question}"
+#        response = llm.invoke(prompt)
         
         # Print the formatted JSON response
-        print(f"\nQuestion: {question}\n")
-        formatted_response = format_response(response)
+#        print(f"\nQuestion: {question}\n")
+#        formatted_response = format_response(response)
 
-    # return data from the calendar api
-    dummy_calendar_response = {
-        "items": [
-            # Monday
-            {
-                "summary": "Team standup",
-                "start": {"dateTime": "2025-04-14T09:00:00-05:00"},
-                "end": {"dateTime": "2025-04-14T09:30:00-05:00"}
-            },
-            {
-                "summary": "Work session",
-                "start": {"dateTime": "2025-04-14T13:00:00-05:00"},
-                "end": {"dateTime": "2025-04-14T16:00:00-05:00"}
-            },
-            # Tuesday
-            {
-                "summary": "Doctor's appointment",
-                "start": {"dateTime": "2025-04-15T10:00:00-05:00"},
-                "end": {"dateTime": "2025-04-15T11:00:00-05:00"}
-            },
-            # Wednesday
-            {
-                "summary": "Gym",
-                "start": {"dateTime": "2025-04-16T18:00:00-05:00"},
-                "end": {"dateTime": "2025-04-16T19:00:00-05:00"}
-            },
-            # Thursday
-            {
-                "summary": "Group project meeting",
-                "start": {"dateTime": "2025-04-17T14:00:00-05:00"},
-                "end": {"dateTime": "2025-04-17T15:00:00-05:00"}
-            },
-            # Friday (free!)
-        ]
-    }
+        
 
     # Prompt the LLM to interpret the dummy response using the original question
     interpret_prompt = (
@@ -146,17 +137,36 @@ def ask_questions(llm, questions):
         "in response to the request you just generated. Based on this data and the user's original question, "
         "provide a clear and helpful natural language response.\n\n"
         f"User's Question: {question}\n\n"
-        f"API Response JSON: {json.dumps(dummy_calendar_response, indent=4)}"
+        f"API Response JSON: {json.dumps(api_response_data, indent=4)}"
     )
 
     final_response = llm.invoke(interpret_prompt)
-    print("\nLLM's Interpretation of Calendar Data:\n")
+ #   print("\nLLM's Interpretation of Calendar Data:\n")
     print(final_response.content if hasattr(final_response, 'content') else final_response)
 
 
 # Sample questions
-questions = [
-    "What day of the week am I most free?",
-]
+# questions = [
+#     "What day of the week am I most free?",
+# ]
 
-ask_questions(llm, questions)
+# ask_questions(llm, questions)
+
+def wrapper(arg2, token):
+    # For now, just log the token to confirm it was passed correctly
+    # print(f"Received token: {token}")
+    ask_questions(llm, arg2, token)
+
+# ----------------- WEEKLY NEWSLETTER ------------------------------
+
+def get_weather_data(location="Dallas,TX"):
+    API_KEY = os.getenv("WEATHER_API_KEY")
+    url = f"https://api.tomorrow.io/v4/weather/forecast?location={location}&apikey={API_KEY}&timesteps=1d"
+
+
+    response = requests.get(url)
+    try:
+        return response.json()
+    except Exception as e:
+        print("Failed to parse weather response:", e)
+        return {}
