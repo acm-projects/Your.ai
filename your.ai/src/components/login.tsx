@@ -1,11 +1,12 @@
 import React from "react";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../components/AuthContext";
+import { useAuth } from "./authContext"; 
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const { setToken } = useAuth(); 
+
   const login = useGoogleLogin({
     scope: "https://www.googleapis.com/auth/calendar",
     onSuccess: (tokenResponse) => {

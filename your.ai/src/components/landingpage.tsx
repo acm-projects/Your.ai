@@ -1,9 +1,21 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 40 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.6 } }
+};
+
+const fadeIn = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { duration: 0.5 } }
+};
 
 const LandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white text-slate-800">
+      {/* Navbar */}
       <nav className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
@@ -19,57 +31,61 @@ const LandingPage: React.FC = () => {
                 Sign Up
               </Link>
             </div>
-            <div className="md:hidden">
-              <button className="text-slate-600 hover:text-indigo-600 transition">
-                <i className="fas fa-bars text-xl"></i>
-              </button>
-            </div>
           </div>
         </div>
       </nav>
 
+      {/* Hero Section */}
       <section className="text-center py-24 px-4 sm:px-6 lg:px-8">
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-slate-800 leading-tight">
-          <span>Organize Your Life with</span>
-          <br />
-          <span className="text-indigo-600">Your.ai</span>
-        </h1>
-        <p className="mt-6 max-w-2xl mx-auto text-lg text-slate-600">
+        <motion.h1
+          variants={fadeUp}
+          initial="hidden"
+          animate="show"
+          className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-slate-800 leading-tight"
+        >
+          Organize Your Life with <br /><span className="text-indigo-600">Your.ai</span>
+        </motion.h1>
+        <motion.p
+          variants={fadeUp}
+          initial="hidden"
+          animate="show"
+          className="mt-6 max-w-2xl mx-auto text-lg text-slate-600"
+        >
           The perfect blend of calendar and note-taking. Keep track of your schedule while taking detailed notes for every event.
-        </p>
-        <div className="mt-8">
+        </motion.p>
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="show"
+          className="mt-8"
+        >
           <Link
             to="/login"
             className="inline-block bg-indigo-600 text-white font-medium px-8 py-3 rounded-md hover:bg-indigo-700 transition text-lg shadow"
           >
             Get Started
           </Link>
-        </div>
+        </motion.div>
       </section>
 
+      {/* Video Demo */}
       <section className="bg-slate-50 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-slate-800">See Your.ai in Action</h2>
+          <motion.h2 variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="text-3xl font-bold text-slate-800">
+            See Your.ai in Action
+          </motion.h2>
           <p className="mt-2 text-slate-500">Watch how easy it is to organize your schedule and take notes</p>
-          <div className="mt-8 flex justify-center">
+          <motion.div variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="mt-8 flex justify-center">
             <div className="w-full max-w-2xl rounded-lg overflow-hidden shadow-lg">
-              <video
-                className="w-full h-[300px] object-cover"
-                autoPlay
-                muted
-                loop
-                playsInline
-              >
-                <source
-                  src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4"
-                  type="video/mp4"
-                />
+              <video className="w-full h-[300px] object-cover" autoPlay muted loop playsInline>
+                <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4" type="video/mp4" />
               </video>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
+      {/* Features */}
       <section id="features" className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-extrabold text-slate-800">Features that make you more productive</h2>
@@ -91,13 +107,20 @@ const LandingPage: React.FC = () => {
                 desc: 'AI-powered note suggestions and automatic organization based on your calendar events.',
               },
             ].map(({ icon, title, desc }) => (
-              <div key={title} className="bg-slate-50 p-6 rounded-lg shadow hover:shadow-lg transition">
+              <motion.div
+                key={title}
+                variants={fadeUp}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true }}
+                className="bg-slate-50 p-6 rounded-lg shadow hover:shadow-lg transition"
+              >
                 <div className="text-indigo-600 mb-4">
                   <i className={`${icon} text-3xl`}></i>
                 </div>
                 <h3 className="text-xl font-bold text-slate-800 mb-2">{title}</h3>
                 <p className="text-slate-600">{desc}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -115,19 +138,27 @@ const LandingPage: React.FC = () => {
               ['Suhani Rana', 'Backend Manager', 'Blank.'],
               ['Krish Arora', 'Backend', 'Blank.'],
             ].map(([name, role, desc]) => (
-              <div key={name} className="bg-white p-8 rounded-lg shadow text-center">
+              <motion.div
+                key={name}
+                variants={fadeUp}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true }}
+                className="bg-white p-8 rounded-lg shadow text-center"
+              >
                 <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-slate-200 flex items-center justify-center">
                   <i className="fas fa-user text-3xl text-slate-500"></i>
                 </div>
                 <h3 className="text-xl font-semibold text-slate-800">{name}</h3>
                 <p className="text-indigo-600">{role}</p>
                 <p className="text-slate-500 mt-2">{desc}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
+      {/* Footer */}
       <footer className="bg-slate-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
@@ -153,28 +184,22 @@ const LandingPage: React.FC = () => {
           <div>
             <h4 className="font-bold mb-4 text-lg">Check us out</h4>
             <div className="flex space-x-4">
-  <a href="#" className="text-slate-400 hover:text-indigo-300">
-    <i className="fab fa-linkedin text-xl"></i>
-  </a>
-  <a href="https://acmutd.co" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-indigo-300">
-    <img
-      src="/images.png"
-      alt="ACM UTD Logo"
-      className="w-6 h-6 object-contain"
-    />
-  </a>
-</div>
-
+              <a href="#" className="text-slate-400 hover:text-indigo-300">
+                <i className="fab fa-linkedin text-xl"></i>
+              </a>
+              <a href="https://acmutd.co" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-indigo-300">
+                <img src="/images.png" alt="ACM UTD Logo" className="w-6 h-6 object-contain" />
+              </a>
+            </div>
           </div>
         </div>
         <div className="text-center text-slate-500 mt-10 border-t border-slate-700 pt-6 flex items-center justify-center space-x-2">
-  <img src="/acm.png" alt="ACM Logo" className="w-5 h-5" />
-  <span>&copy; ACM. All rights reserved.</span>
-</div>
-
+          <img src="/acm.png" alt="ACM Logo" className="w-5 h-5" />
+          <span>&copy; ACM. All rights reserved.</span>
+        </div>
       </footer>
     </div>
-  )
-}
+  );
+};
 
 export default LandingPage;
