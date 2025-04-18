@@ -232,3 +232,45 @@ def create_newsletter(llm, token, location="Dallas"):
     print(final_response.content if hasattr(final_response, 'content') else final_response)
 
 # ------------------------- KANBAN BOARD -------------------------------
+def generate_weekly_todos(llm, token):
+    # Get current week's start and end times using timezone-aware function
+    start_time, end_time, timezone = get_week_range_local()
+
+    # Prompt to get calendar events for the week
+    calendar_prompt = (
+        "You are a system assistant that formats JSON requests to the Google Calendar API. "
+        "Generate a JSON request to fetch all events scheduled for the next 7 days. "
+        "Use these parameters:\n"
+        f"timeMin: {start_time}\n"
+        f"timeMax: {end_time}\n"
+        f"Time Zone: {timezone}\n"
+        "Return only a JSON with 'methods', 'URL', and 'params'."
+    )
+
+    response = llm.invoke(calendar_prompt)
+    request_json = format_response(response)
+
+    # Force time bounds if needed
+    if "params" in request_json:
+        request_json["params"]["timeMin"] = start_time
+        request_json["params"]["timeMax"] = end_time
+
+    calendar_events = call_calendar_api(request_json, token)
+
+    # Ask LLM to generate to-do items based on events
+    todo_prompt = (
+        "You are helping the user build a Kanban to-do list based on their calendar. "
+        "For each calendar event, generate a small checklist of related tasks. "
+        "Format it like a JSON list with one object per event, each containing:\n"
+        "- 'event': the event title\n"
+        "- 'todos': a list of tasks\n\n"
+        f"Here is the JSON of upcoming events:\n{json.dumps(calendar_events, indent=4)}\n\n"
+        "Output:"
+    )
+
+    final_response = llm.invoke(todo_prompt)
+    todos = format_response(final_response)
+    
+    print("\nGenerated To-Do Items:\n")
+    print(json.dumps(todos, indent=4))
+    return todos
