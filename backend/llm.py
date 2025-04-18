@@ -75,7 +75,7 @@ def format_response(response):
         except json.JSONDecodeError as e:
             print("Failed to parse nested 'data':", e)
 
-    print(json.dumps(parsed_map, indent=4))
+    # print(json.dumps(parsed_map, indent=4))
     return parsed_map
 
 from datetime import datetime, timedelta
@@ -177,10 +177,10 @@ def ask_questions(llm, question, token=None):
 
 # ask_questions(llm, questions)
 
-def wrapper(arg2, token):
+def chat_wrapper(userPrompt, token):
     # For now, just log the token to confirm it was passed correctly
     # print(f"Received token: {token}")
-    ask_questions(llm, arg2, token)
+    ask_questions(llm, userPrompt, token)
 
 
 # ----------------- WEEKLY NEWSLETTER ------------------------------
@@ -241,7 +241,9 @@ def create_newsletter(llm, token, location="Dallas"):
     # print(result)
     return result
 
-
+def wrapper_for_newsletter(llm, token):
+    newsletter = create_newsletter(llm, token)
+    return newsletter
 # ------------------------- KANBAN BOARD -------------------------------
 
 def generate_weekly_todos(llm, token):
@@ -289,8 +291,6 @@ def generate_weekly_todos(llm, token):
     # print(json.dumps(todos, indent=4))
     return todos
 
-def wrapper_for_kanban(question, token):
-    # This function will trigger the process to generate the weekly to-dos based on the Kanban board
-    # print(f"Starting the Kanban board generation for the question: {question}")
+def wrapper_for_kanban(token):
     todos = generate_weekly_todos(llm, token)
     return todos
