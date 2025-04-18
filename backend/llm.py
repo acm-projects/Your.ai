@@ -35,8 +35,6 @@ def query_pinecone(query):
     return "\n\n".join(retrieved_texts)
 
 def format_response(response):
-    #import json
-
     response_text = response.get('text', '') if hasattr(response, 'get') else str(response)
 
     # Clean escape sequences
@@ -166,8 +164,8 @@ def ask_questions(llm, question, token=None):
     final_response = llm.invoke(interpret_prompt)
     result = final_response.content if hasattr(final_response, 'content') else final_response
 
-    # print(result)
-    return result
+    print(result)
+    # return result
 
 
 # Sample questions
@@ -227,70 +225,95 @@ def create_newsletter(llm, token, location="Dallas"):
 
     # Step 4: Ask LLM to generate a newsletter
     newsletter_prompt = (
-        "Create a friendly and helpful weekly newsletter for the user. "
-        "Summarize calendar events from today through Sunday, and include daily weather forecasts. "
-        "Write in an engaging and warm tone with emoji and formatting where appropriate.\n\n"
-        f"Calendar Events JSON:\n{json.dumps(calendar_data, indent=4)}\n\n"
-        f"Weather Forecast JSON:\n{json.dumps(weather_data, indent=4)}"
+    "Create a friendly and helpful weekly newsletter for the user. "
+    "Summarize calendar events and weather forecasts from today (Friday) through Sunday, grouped by day. "
+    "For each day, include a cheerful header, then list calendar events (with emojis and short descriptions), "
+    "followed by the weather forecast (with high/low temperatures, conditions, and friendly suggestions). "
+    "Write in an engaging and warm tone with emoji and formatting where appropriate. Use bold for times, weather highlights, and section headers.\n\n"
+    f"Calendar Events JSON:\n{json.dumps(calendar_data, indent=4)}\n\n"
+    f"Weather Forecast JSON:\n{json.dumps(weather_data, indent=4)}"
     )
+
 
     final_response = llm.invoke(newsletter_prompt)
     result = final_response.content if hasattr(final_response, 'content') else final_response
 
     # print("\nWeekly Newsletter:\n")
-    # print(result)
-    return result
+    print(result)
+    # return result
 
-def wrapper_for_newsletter(llm, token):
+def newsletter_wrapper(llm, token):
     newsletter = create_newsletter(llm, token)
     return newsletter
+
 # ------------------------- KANBAN BOARD -------------------------------
+
+def format_events(response):
+    response_text = response.get('text', '') if hasattr(response, 'get') else str(response)
+
+    # Clean up common formatting artifacts
+    response_text = response_text.replace("\\n", "\n").replace("\\", "")
+
+    # Use regex to find a JSON block inside ```json ... ```
+    match = re.search(r"```json\s*(\[.*?\])\s*```", response_text, re.DOTALL)
+    if not match:
+        print("No JSON block found.")
+        return None
+
+    json_text = match.group(1)
+
+    try:
+        parsed_data = json.loads(json_text)
+        return parsed_data
+    except json.JSONDecodeError as e:
+        print("JSON parsing error:", e)
+        return None
+
 
 def generate_weekly_todos(llm, token):
     # Get current week's start and end times using timezone-aware function
     start_time, end_time, timezone = get_week_range_local()
 
-    # Prompt to get calendar events for the week
-    calendar_prompt = (
-        "You are a system assistant that formats JSON requests to the Google Calendar API. "
-        "Generate a JSON request to fetch all events scheduled from today to the upcoming Sunday. "
-        "Use these parameters:\n"
-        f"timeMin: {start_time}\n"
-        f"timeMax: {end_time}\n"
-        f"Time Zone: {timezone}\n"
-        "Return only a JSON with 'methods', 'URL', and 'params'."
-    )
+    request_json = {
+        "methods": "GET",
+        "URL": "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+        "params": {
+            "timeMin": start_time,
+            "timeMax": end_time,
+            "singleEvents": True,
+            "orderBy": "startTime",
+            "timeZone": timezone
+        }
+    }
 
-    response = llm.invoke(calendar_prompt)
-    request_json = format_response(response)
-
-    # Force time bounds if needed
-    if "params" in request_json:
-        request_json["params"]["timeMin"] = start_time
-        request_json["params"]["timeMax"] = end_time
-
+    # Call the Google Calendar API using the token and request
     calendar_events = call_calendar_api(request_json, token)
 
-    # Ask LLM to generate to-do items based on events
+    # Format todo generation prompt
     todo_prompt = (
-        "You are helping the user build a Kanban to-do list based on their calendar. "
-        "Only use events scheduled between today and the upcoming Sunday. "
-        "For each calendar event, generate a small checklist of related tasks. "
-        "Format it like a JSON list with one object per event, each containing:\n"
-        "- 'event': the event title\n"
-        "- 'todos': a list of tasks\n\n"
-        f"Here is the JSON of upcoming events:\n{json.dumps(calendar_events, indent=4)}\n\n"
-        "Output:"
+        "You are a productivity assistant helping organize a Kanban board based on calendar events.\n\n"
+        "You will receive a JSON array of calendar events scheduled between today and the upcoming Sunday. "
+        "For *each event* in the array, do the following:\n"
+        "1. Read the event's title and understand what it's about.\n"
+        "2. Write a checklist of 2–5 related tasks that someone might need to do to prepare for or follow up on the event.\n"
+        "3. Include this in the final list.\n\n"
+        "Format your output as a list where each item is structured like:\n"
+        "{\n"
+        '  "event": "event title",\n'
+        '  "todos": ["task 1", "task 2", "task 3"]\n'
+        "}\n\n"
+        "**Process all events** in the list and do not skip any, even if they seem unimportant or repetitive.\n\n"
+        f"Here is the event list:\n{json.dumps(calendar_events['items'], indent=2)}\n\n"
+        "Now return the full list of todos in the specified format:"
     )
 
-
     final_response = llm.invoke(todo_prompt)
-    todos = format_response(final_response)
+    todos = format_events(final_response)
 
-    # print("\nGenerated To-Do Items:\n")
-    # print(json.dumps(todos, indent=4))
+    print(json.dumps(todos, indent=4))
     return todos
 
-def wrapper_for_kanban(token):
+
+def kanban_wrapper(llm, token):
     todos = generate_weekly_todos(llm, token)
     return todos
