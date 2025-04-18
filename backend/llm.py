@@ -84,9 +84,12 @@ from tzlocal import get_localzone
 def get_week_range_local():
     tz = get_localzone()
     now = datetime.now(tz)
-    start = now
-    end = now + timedelta(days=7)
-    return start.isoformat(), end.isoformat(), str(tz)
+
+    # Calculate days until Sunday (weekday() returns 0 for Monday, 6 for Sunday)
+    days_until_sunday = 6 - now.weekday()
+    end_of_week = now + timedelta(days=days_until_sunday)
+
+    return now.isoformat(), end_of_week.isoformat(), str(tz)
 
 def call_calendar_api(request_json, token):
     method = request_json.get("methods")
@@ -135,7 +138,7 @@ def ask_questions(llm, question, token=None):
     prompt = f"{context}\n\n{relevant_data}\n\nQuestion: {question}"
     response = llm.invoke(prompt)
 
-    print(f"\nQuestion: {question}\n")
+    # print(f"\nQuestion: {question}\n")
     api_request_json = format_response(response)
 
     api_response_data = call_calendar_api(api_request_json, token)
@@ -161,8 +164,10 @@ def ask_questions(llm, question, token=None):
     )
 
     final_response = llm.invoke(interpret_prompt)
- #   print("\nLLM's Interpretation of Calendar Data:\n")
-    print(final_response.content if hasattr(final_response, 'content') else final_response)
+    result = final_response.content if hasattr(final_response, 'content') else final_response
+
+    # print(result)
+    return result
 
 
 # Sample questions
@@ -176,6 +181,7 @@ def wrapper(arg2, token):
     # For now, just log the token to confirm it was passed correctly
     # print(f"Received token: {token}")
     ask_questions(llm, arg2, token)
+
 
 # ----------------- WEEKLY NEWSLETTER ------------------------------
 
@@ -194,14 +200,14 @@ def get_weather_data(location="Dallas"):
 def create_newsletter(llm, token, location="Dallas"):
     # Step 1: Generate request for this week's events using the LLM
     start_time, end_time, user_timezone = get_week_range_local()
-    question = "Get all calendar events for the next 7 days"
+    question = "Get all calendar events from today to the upcoming Sunday"
     relevant_data = query_pinecone(question)
 
     calendar_prompt = (
     "You are an assistant generating JSON requests to the Google Calendar API.\n"
-    "Generate a JSON request to retrieve all calendar events for the next 7 days, "
+    "Generate but do not output a JSON request to retrieve all calendar events from today to the upcoming Sunday, "
     "based on the user's current time zone.\n"
-    "Format the output with only the keys: `methods`, `URL`, and `params`.\n"
+    "Format the request with only the keys: `methods`, `URL`, and `params`.\n"
     f"Start Time: {start_time}\nEnd Time: {end_time}\nTime Zone: {user_timezone}"
     )
 
@@ -221,17 +227,23 @@ def create_newsletter(llm, token, location="Dallas"):
 
     # Step 4: Ask LLM to generate a newsletter
     newsletter_prompt = (
-        "Create a friendly and helpful newsletter for the user summarizing their upcoming week. "
-        "Include scheduled calendar events and daily weather forecasts. Write in an engaging tone.\n\n"
+        "Create a friendly and helpful weekly newsletter for the user. "
+        "Summarize calendar events from today through Sunday, and include daily weather forecasts. "
+        "Write in an engaging and warm tone with emoji and formatting where appropriate.\n\n"
         f"Calendar Events JSON:\n{json.dumps(calendar_data, indent=4)}\n\n"
         f"Weather Forecast JSON:\n{json.dumps(weather_data, indent=4)}"
     )
 
     final_response = llm.invoke(newsletter_prompt)
-    print("\nWeekly Newsletter:\n")
-    print(final_response.content if hasattr(final_response, 'content') else final_response)
+    result = final_response.content if hasattr(final_response, 'content') else final_response
+
+    # print("\nWeekly Newsletter:\n")
+    # print(result)
+    return result
+
 
 # ------------------------- KANBAN BOARD -------------------------------
+
 def generate_weekly_todos(llm, token):
     # Get current week's start and end times using timezone-aware function
     start_time, end_time, timezone = get_week_range_local()
@@ -239,7 +251,7 @@ def generate_weekly_todos(llm, token):
     # Prompt to get calendar events for the week
     calendar_prompt = (
         "You are a system assistant that formats JSON requests to the Google Calendar API. "
-        "Generate a JSON request to fetch all events scheduled for the next 7 days. "
+        "Generate a JSON request to fetch all events scheduled from today to the upcoming Sunday. "
         "Use these parameters:\n"
         f"timeMin: {start_time}\n"
         f"timeMax: {end_time}\n"
@@ -260,6 +272,7 @@ def generate_weekly_todos(llm, token):
     # Ask LLM to generate to-do items based on events
     todo_prompt = (
         "You are helping the user build a Kanban to-do list based on their calendar. "
+        "Only use events scheduled between today and the upcoming Sunday. "
         "For each calendar event, generate a small checklist of related tasks. "
         "Format it like a JSON list with one object per event, each containing:\n"
         "- 'event': the event title\n"
@@ -268,9 +281,16 @@ def generate_weekly_todos(llm, token):
         "Output:"
     )
 
+
     final_response = llm.invoke(todo_prompt)
     todos = format_response(final_response)
-    
-    print("\nGenerated To-Do Items:\n")
-    print(json.dumps(todos, indent=4))
+
+    # print("\nGenerated To-Do Items:\n")
+    # print(json.dumps(todos, indent=4))
+    return todos
+
+def wrapper_for_kanban(question, token):
+    # This function will trigger the process to generate the weekly to-dos based on the Kanban board
+    # print(f"Starting the Kanban board generation for the question: {question}")
+    todos = generate_weekly_todos(llm, token)
     return todos
