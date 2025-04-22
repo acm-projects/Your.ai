@@ -1,18 +1,39 @@
 import React from "react";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "./authContext"; 
+import { useAuth } from "../Context/authContext";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { setToken } = useAuth(); 
+  const { setToken, setUser } = useAuth();
 
   const login = useGoogleLogin({
-    scope: "https://www.googleapis.com/auth/calendar",
-    onSuccess: (tokenResponse) => {
-      console.log("Credential Response:", tokenResponse);
-      setToken(tokenResponse.access_token); 
-      navigate("/dashboard");
+    scope: "https://www.googleapis.com/auth/calendar profile email",
+    onSuccess: async (tokenResponse) => {
+      console.log(tokenResponse);
+      try {
+        const accessToken = tokenResponse.access_token;
+        setToken(accessToken);
+
+        // Fetch user info from Google
+        const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        const profile = await res.json();
+        console.log(profile);
+        setUser({
+          name: profile.name,
+          email: profile.email,
+          picture: profile.picture,
+        });
+
+        navigate("/dashboard");
+      } catch (err) {
+        console.error("Failed to fetch user info:", err);
+      }
     },
     onError: () => {
       console.log("Login Failed");

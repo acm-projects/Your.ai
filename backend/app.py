@@ -2,11 +2,12 @@ from flask import Flask, request, jsonify, abort
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from datetime import datetime
-
-# ✅ Import updated wrapper functions
-from llm import chat_wrapper, wrapper_for_newsletter, wrapper_for_kanban
+from flask_cors import CORS  # Import CORS
+from llm import chat_wrapper, newsletter_wrapper, kanban_wrapper
 
 app = Flask(__name__)
+
+CORS(app)
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
@@ -32,21 +33,24 @@ def hello():
 def get_events():
     try:
         service = calendar_service()
-        events_result = service.events().list(
+        upcoming_result = service.events().list(
             calendarId="primary",
             maxResults=10,
             singleEvents=True,
-            orderBy="startTime"
+            orderBy="startTime",
+            timeMin=datetime.utcnow().isoformat() + "Z"  # Only future events
         ).execute()
 
-        events = events_result.get("items", [])
+        upcoming_events = upcoming_result.get('items', [])
+
         event_list = [{
             "summary": event.get("summary"),
             "start": event["start"].get("dateTime", event["start"].get("date")),
             "end": event["end"].get("dateTime", event["end"].get("date")),
-        } for event in events]
+        } for event in upcoming_events]
 
         return jsonify(event_list)
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -121,8 +125,8 @@ def ask_llm_question():
             abort(401, description="Missing or invalid Authorization header")
 
         token = auth_header.split(" ")[1]
-        chat_wrapper(question, token)
-        return jsonify({"message": "LLM request processed"}), 200
+        chatResponse = chat_wrapper(question, token)
+        return jsonify({"message": chatResponse}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -135,7 +139,7 @@ def generate_newsletter():
             abort(401, description="Missing or invalid Authorization header")
 
         token = auth_header.split(" ")[1]
-        newsletter = wrapper_for_newsletter(token)
+        newsletter = newsletter_wrapper(token)
         return jsonify({"newsletter": newsletter}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -149,7 +153,7 @@ def get_kanban_todos():
             abort(401, description="Missing or invalid Authorization header")
 
         token = auth_header.split(" ")[1]
-        kanban = wrapper_for_kanban(token)
+        kanban = kanban_wrapper(token)
         return jsonify({"todos": kanban}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
