@@ -4,8 +4,12 @@ import type React from "react";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bot, Send, X, MessageSquare } from "lucide-react";
+<<<<<<< HEAD
 import { useCalendar } from "../context/CalendarContext";
 import ReactMarkdown from "react-markdown";
+=======
+import { useCalendar } from "../Context/Calendarcontext";
+>>>>>>> 7c86417fb7787454fecd3f12d1b1f43007839296
 
 interface Message {
   id: number;

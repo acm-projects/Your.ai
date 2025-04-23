@@ -1,10 +1,28 @@
-import type React from "react"
-import FullCalendar from "@fullcalendar/react"
-import dayGridPlugin from "@fullcalendar/daygrid"
-import DayView from "./DayView"
-import Weekly from "./Weekly"
-import type { Dayjs } from "dayjs"
-import { useCalendar } from "../context/CalendarContext"
+import React from "react";
+import FullCalendar from "@fullcalendar/react";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import DayView from "./dayView";
+import Weekly from "./weekly";
+import { Dayjs } from "dayjs";
+
+type CalendarDay = {
+  date: Date;
+  isCurrentMonth: boolean;
+};
+
+const handleDayClick = (day: CalendarDay) => {
+  console.log(day.date);
+};
+
+
+interface Event {
+  id: string;
+  title: string;
+  time: string;
+  attendees: number;
+  type: "meeting" | "task" | "session";
+  date: string;
+}
 
 interface CalendarViewProps {
   view: "Day" | "Weekly" | "Monthly"
@@ -68,4 +86,4 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   }
 }
 
-export default CalendarView
+export default CalendarView;

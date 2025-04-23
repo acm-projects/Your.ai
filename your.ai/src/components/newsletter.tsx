@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, SetStateAction } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../Context/authContext"
@@ -474,7 +474,7 @@ const Newsletter = ({ isOpen, onClose }: NewsletterProps) => {
     }
   }, [isOpen, token])
 
-  const handleDayClick = (day: DaySchedule) => {
+  const handleDayClick = (day: SetStateAction<{ day: string; date: string; events: { time: string; title: string; category: string; location: string }[] }>) => {
     setSelectedDay(day)
     setCurrentView("day")
   }

@@ -1,20 +1,5 @@
 import { useState } from "react";
-
-const initialTasks = {
-  todo: [
-    { id: 1, title: "Grocery shopping", priority: "medium", dueDate: "Today" },
-    { id: 2, title: "Prepare presentation", priority: "high", dueDate: "Tomorrow" },
-    { id: 3, title: "Call insurance company", priority: "low", dueDate: "This week" },
-  ],
-  inProgress: [
-    { id: 4, title: "Research gym memberships", priority: "medium", dueDate: "Today" },
-    { id: 5, title: "Draft email to professor", priority: "high", dueDate: "Today" },
-  ],
-  done: [
-    { id: 6, title: "Pay rent", priority: "high", dueDate: "Yesterday" },
-    { id: 7, title: "Schedule dentist appointment", priority: "medium", dueDate: "Yesterday" },
-  ],
-};
+import { useTaskContext } from "./taskContext"; // Import the context
 
 const priorityColors = {
   low: "bg-blue-500",
@@ -23,7 +8,7 @@ const priorityColors = {
 };
 
 export default function TaskBoard() {
-  const [tasks] = useState(initialTasks);
+  const { tasks, addTask, moveTask } = useTaskContext(); // Get tasks and context methods
   const [activeTab, setActiveTab] = useState<string>("todo");
 
   const cn = (...classes: string[]) => classes.filter(Boolean).join(" ");
@@ -33,6 +18,16 @@ export default function TaskBoard() {
     { key: "inProgress", label: "In Progress" },
     { key: "done", label: "Done" },
   ];
+
+  const handleAddTask = () => {
+    const newTask = {
+      id: Date.now(),
+      title: "New Task",
+      priority: "medium",
+      dueDate: "Tomorrow",
+    };
+    addTask(newTask, "todo");
+  };
 
   return (
     <div className="w-full p-4">
@@ -58,14 +53,11 @@ export default function TaskBoard() {
           ))}
         </div>
 
-        <button className="inline-flex items-center justify-center gap-1 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium shadow-sm transition hover:bg-gray-50">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
+        <button
+          onClick={handleAddTask}
+          className="inline-flex items-center justify-center gap-1 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium shadow-sm transition hover:bg-gray-50"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
@@ -80,15 +72,7 @@ export default function TaskBoard() {
             key={task.id}
             task={task}
             priorityColors={priorityColors}
-            icon={
-              activeTab === "todo" ? (
-                <CircleIcon />
-              ) : activeTab === "inProgress" ? (
-                <ProgressIcon />
-              ) : (
-                <CheckIcon />
-              )
-            }
+            onMoveTask={(from, to) => moveTask(task.id, from, to)} // Provide move task functionality
           />
         ))}
       </div>
@@ -104,14 +88,14 @@ interface TaskCardProps {
     dueDate: string;
   };
   priorityColors: Record<string, string>;
-  icon: React.ReactNode;
+  onMoveTask: (from: "todo" | "inProgress" | "done", to: "todo" | "inProgress" | "done") => void;
 }
 
-function TaskCard({ task, priorityColors, icon }: TaskCardProps) {
+function TaskCard({ task, priorityColors, onMoveTask }: TaskCardProps) {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition">
       <div className="flex items-start gap-3">
-        <div className="mt-1">{icon}</div>
+        {/* Icon and Task Details */}
         <div>
           <p className="text-sm font-semibold text-gray-800">{task.title}</p>
           <div className="mt-1 flex items-center text-xs text-gray-500 space-x-4">
@@ -123,27 +107,12 @@ function TaskCard({ task, priorityColors, icon }: TaskCardProps) {
           </div>
         </div>
       </div>
+
+      {/* Move Task Button */}
+      <div className="mt-4 flex gap-2">
+        <button onClick={() => onMoveTask("todo", "inProgress")}>Move to In Progress</button>
+        <button onClick={() => onMoveTask("inProgress", "done")}>Move to Done</button>
+      </div>
     </div>
   );
 }
-
-// Icons
-const CircleIcon = () => (
-  <svg className="h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="10" />
-  </svg>
-);
-
-const ProgressIcon = () => (
-  <svg className="h-4 w-4 text-yellow-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="10" />
-    <polyline points="12 6 12 12 16 14" />
-  </svg>
-);
-
-const CheckIcon = () => (
-  <svg className="h-4 w-4 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-    <polyline points="22 4 12 14.01 9 11.01" />
-  </svg>
-);
