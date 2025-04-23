@@ -165,7 +165,7 @@ def ask_questions(llm, question, token=None):
     result = final_response.content if hasattr(final_response, 'content') else final_response
 
     print(result)
-    # return result
+    return result
 
 
 # Sample questions
@@ -178,7 +178,7 @@ def ask_questions(llm, question, token=None):
 def chat_wrapper(userPrompt, token):
     # For now, just log the token to confirm it was passed correctly
     # print(f"Received token: {token}")
-    ask_questions(llm, userPrompt, token)
+    return ask_questions(llm, userPrompt, token)
 
 
 # ----------------- WEEKLY NEWSLETTER ------------------------------
@@ -240,7 +240,7 @@ def create_newsletter(llm, token, location="Dallas"):
 
     # print("\nWeekly Newsletter:\n")
     print(result)
-    # return result
+    return result
 
 def newsletter_wrapper(llm, token):
     newsletter = create_newsletter(llm, token)

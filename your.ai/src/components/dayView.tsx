@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { format, addDays, subDays } from "date-fns";
+import React from "react";
+import { format, addDays, subDays, startOfWeek } from "date-fns";
 
 interface Event {
   id: string;
@@ -31,31 +31,35 @@ const DayView: React.FC<DayViewProps> = ({ date, events, onNewEvent, setDate }) 
     });
   };
 
+  const goToToday = () => {
+    setDate(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  };
+
   return (
     <div className="p-4 bg-white h-full w-full overflow-y-auto">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
-            onClick={() => setDate(subDays(date, 1))}
+            onClick={() => setDate(subDays(date, 7))}
             className="text-sm px-3 py-1 border rounded-md text-gray-600 hover:bg-gray-100"
           >
-            ← Previous
+            ← Previous Week
           </button>
 
           <h2 className="text-lg font-semibold">
-            {format(date, "EEEE MMMM d, yyyy")}
+            {format(date, "MMMM yyyy")} • Week of {format(date, "MMM d")}
           </h2>
 
           <button
-            onClick={() => setDate(addDays(date, 1))}
+            onClick={() => setDate(addDays(date, 7))}
             className="text-sm px-3 py-1 border rounded-md text-gray-600 hover:bg-gray-100"
           >
-            Next →
+            Next Week →
           </button>
 
           <button
-            onClick={() => setDate(new Date())}
+            onClick={goToToday}
             className="border px-3 py-1 rounded-md text-sm text-gray-600 hover:bg-gray-100"
           >
             Today

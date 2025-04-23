@@ -1,9 +1,27 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
 import { CalendarClock, Clock, ListTodo, Calendar } from "lucide-react";
 import WeeklyCalendar from "./weeklyCalendar";
 import UpcomingEvents from "../components/UpcomingEvents";
 import WeeklySummary from "../components/WeeklySummary";
 import TaskBoard from "./taskBoard";
-import Sidebar from "./Sidebar"; 
+import Sidebar from "./Sidebar";
+import Newsletter from "../components/newsletter";
+import { useAuth } from "../Context/authContext";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+interface Event {
+  id: string;
+  title: string;
+  time: string;
+  date: string;
+}
 
 type StatsCardProps = {
   title: string;
@@ -53,13 +71,55 @@ function SectionCard({
   );
 }
 
-export default function Tasks() {
+export default function Dashboard() {
+  const { token } = useAuth();
+  const [isNewsletterOpen, setIsNewsletterOpen] = useState(false);
+  const [todaysEvents, setTodaysEvents] = useState<Event[]>([]);
+
+  const openNewsletter = () => setIsNewsletterOpen(true);
+  const closeNewsletter = () => setIsNewsletterOpen(false);
+
+  useEffect(() => {
+    const fetchTodaysEvents = async () => {
+      try {
+        const response = await fetch("http://localhost:5001/events", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch events");
+
+        const data = await response.json();
+        const today = dayjs().format("YYYY-MM-DD");
+
+        const filtered = data
+          .filter((event: any) => event.start.startsWith(today))
+          .map((item: any, idx: number) => {
+            const timeStr = item.start?.split("T")[1]?.substring(0, 5) || "00:00";
+            return {
+              id: String(idx),
+              title: item.summary || "No Title",
+              time: timeStr,
+              date: item.start,
+            };
+          });
+
+        setTodaysEvents(filtered);
+      } catch (err) {
+        console.error("Failed to load today's events:", err);
+      }
+    };
+
+    fetchTodaysEvents();
+  }, [token]);
+
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-gray-800">
-      {/* Sidebar */}
-      <Sidebar/>
+      <Sidebar />
 
-      {/* Main Content Area */}
       <div className="flex-1 space-y-6 p-4 md:p-8 bg-gray-50 overflow-y-auto">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 px-2 py-4">
           <div>
@@ -70,18 +130,32 @@ export default function Tasks() {
               Welcome back! Here's an overview of your week.
             </p>
           </div>
-          <button className="inline-flex items-center gap-2 rounded-md text-sm font-medium bg-blue-600 text-white h-10 px-4 py-2 hover:bg-blue-700 transition-colors">
-            <CalendarClock className="h-4 w-4" />
-            Add Event
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={openNewsletter}
+              className="inline-flex items-center gap-2 rounded-md text-sm font-medium bg-indigo-600 text-white h-10 px-4 py-2 hover:bg-indigo-700 transition-colors"
+            >
+              Weekly Digest
+            </button>
+            <button className="inline-flex items-center gap-2 rounded-md text-sm font-medium bg-blue-600 text-white h-10 px-4 py-2 hover:bg-blue-700 transition-colors">
+              <CalendarClock className="h-4 w-4" />
+              Add Event
+            </button>
+          </div>
         </div>
 
         {/* Stats Cards */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <StatsCard
             title="Today's Events"
-            value={3}
-            subtitle="Next: Team Meeting at 10:00 AM"
+            value={todaysEvents.length}
+            subtitle={
+              todaysEvents.length > 0
+                ? `Next: ${todaysEvents[0].title} at ${dayjs(todaysEvents[0].date)
+                    .tz("America/Chicago") // change as needed
+                    .format("h:mm A")}`
+                : "No events today"
+            }
             icon={<Calendar className="h-5 w-5 text-blue-500" />}
           />
           <StatsCard
@@ -155,6 +229,9 @@ export default function Tasks() {
           </SectionCard>
         </div>
       </div>
+
+      {/* Newsletter Modal */}
+      <Newsletter isOpen={isNewsletterOpen} onClose={closeNewsletter} />
     </div>
   );
 }
