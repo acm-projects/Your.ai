@@ -1,9 +1,19 @@
 import React from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
-import DayView from "./DayView";
-import Weekly from "./Weekly";
+import DayView from "./dayView";
+import Weekly from "./weekly";
 import { Dayjs } from "dayjs";
+
+type CalendarDay = {
+  date: Date;
+  isCurrentMonth: boolean;
+};
+
+const handleDayClick = (day: CalendarDay) => {
+  console.log(day.date);
+};
+
 
 interface Event {
   id: string;

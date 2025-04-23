@@ -199,7 +199,6 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ isActive, isCollapsed, 
               isActive={isActive("/kanban")}
               onClick={onCloseMobile}
             />
-            <SidebarLink to="/tasks" icon={<CheckSquare size={18} />} label="Tasks" isPrimary onClick={onCloseMobile} />
           </ul>
 
           {!isCollapsed && (

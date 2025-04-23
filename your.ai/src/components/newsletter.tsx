@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, SetStateAction } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useNavigate } from "react-router-dom"
 
@@ -166,7 +166,7 @@ const Newsletter = () => {
     return () => clearTimeout(timer)
   }, [])
 
-  const handleDayClick = (day) => {
+  const handleDayClick = (day: SetStateAction<{ day: string; date: string; events: { time: string; title: string; category: string; location: string }[] }>) => {
     setSelectedDay(day)
     setCurrentView("day")
   }

@@ -7,7 +7,11 @@ interface Message {
   timestamp: string;
 }
 
-const Chatbot: React.FC = () => {
+interface ChatbotProps {
+  onSpeechToText: (text: string) => void; // Pass the transcribed speech to parent
+}
+
+const Chatbot: React.FC<ChatbotProps> = ({ onSpeechToText }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -61,8 +65,7 @@ const Chatbot: React.FC = () => {
     setIsProcessing(false);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     if (!inputText.trim()) return;
 
     const userMessage: Message = {
@@ -76,6 +79,11 @@ const Chatbot: React.FC = () => {
     setInputText('');
 
     await processNaturalLanguage(inputText);
+  };
+
+  const handleSpeechResult = (speechText: string) => {
+    setInputText(speechText);
+    handleSubmit();  // Directly call submit logic
   };
 
   return (
@@ -134,7 +142,7 @@ const Chatbot: React.FC = () => {
           </div>
 
           {/* Chat Input */}
-          <form onSubmit={handleSubmit} className="border-t p-4">
+          <form onSubmit={(e) => e.preventDefault()} className="border-t p-4">
             <div className="flex space-x-2">
               <input
                 type="text"
@@ -144,7 +152,8 @@ const Chatbot: React.FC = () => {
                 className="flex-1 px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
               <button
-                type="submit"
+                type="button"
+                onClick={handleSubmit}
                 className="px-4 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <i className="fas fa-paper-plane"></i>

@@ -1,7 +1,7 @@
 import { CalendarClock, Clock, ListTodo, Calendar } from "lucide-react";
 import WeeklyCalendar from "./weeklyCalendar";
-import UpcomingEvents from "../components/UpcomingEvents";
-import WeeklySummary from "../components/WeeklySummary";
+import UpcomingEvents from "../components/upcomingEvents";
+import WeeklySummary from "../components/weeklySummary";
 import TaskBoard from "./taskBoard";
 import Sidebar from "./Sidebar"; 
 
