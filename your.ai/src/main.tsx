@@ -4,7 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import App from "./App";
 import { TaskProvider } from "./components/taskContext";
-import { KanbanProvider } from "./components/kanbanContext";
+import { KanbanProvider } from "./Context/kanbanContext";
 import { AuthProvider } from "./Context/authContext";
 import { CalendarProvider } from "./Context/Calendarcontext";
 
