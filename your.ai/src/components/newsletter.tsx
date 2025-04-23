@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, SetStateAction } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useNavigate } from "react-router-dom"
 
-// Add TypeScript declaration for the Tomorrow.io widget
 declare global {
   interface Window {
     __TOMORROW__?: {
@@ -76,7 +75,8 @@ const weeklySchedule = [
   },
 ]
 
-const timeManagementTips = [
+// We'll replace this with dynamically generated tips from the LLM
+const fallbackTimeManagementTips = [
   {
     title: "Focus Blocks",
     description:
@@ -122,13 +122,111 @@ const priorityColors = {
   low: "bg-blue-500",
 }
 
-const Newsletter = () => {
-  const navigate = useNavigate()
+interface NewsletterProps {
+  isOpen: boolean
+  onClose: () => void
+}
+
+// Define the structure for time management tips
+interface TimeManagementTip {
+  title: string
+  description: string
+  icon: string
+}
+
+const Newsletter = ({ isOpen, onClose }: NewsletterProps) => {
   const [isLoading, setIsLoading] = useState(true)
   const [currentView, setCurrentView] = useState("week") // 'week' or 'day'
   const [selectedDay, setSelectedDay] = useState(weeklySchedule[0])
+  const [timeManagementTips, setTimeManagementTips] = useState<TimeManagementTip[]>(fallbackTimeManagementTips)
+  const [isLoadingTips, setIsLoadingTips] = useState(false)
+  const [tipError, setTipError] = useState<string | null>(null)
 
   const weatherWidgetRef = useRef(null)
+  const navigate = useNavigate()
+
+  // Function to fetch time management tips from the LLM
+  const fetchTimeManagementTips = async () => {
+    setIsLoadingTips(true)
+    setTipError(null)
+
+    try {
+      // Get the auth token - in a real app, you'd get this from your auth system
+      // For this example, we'll assume it's available in localStorage or similar
+      const token = localStorage.getItem("authToken") || sessionStorage.getItem("authToken")
+
+      if (!token) {
+        throw new Error("Authentication token not found")
+      }
+
+      // Prepare the question for the LLM
+      const question =
+        "Based on my upcoming events for the week, generate 4 personalized time management tips. Format each tip with a title, description, and an appropriate emoji icon. Return the response as a JSON array with objects containing title, description, and icon fields."
+
+      // Call the LLM API
+      const response = await fetch("http://localhost:5001/llm/question", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ question }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`)
+      }
+
+      const data = await response.json()
+
+      // Parse the LLM response - it might be in the message field as a string
+      let tips: TimeManagementTip[] = []
+
+      if (data.message) {
+        // Try to extract JSON from the message if it's a string
+        try {
+          // Look for JSON-like content in the response
+          const jsonMatch = data.message.match(/\[[\s\S]*\]/)
+          if (jsonMatch) {
+            tips = JSON.parse(jsonMatch[0])
+          } else {
+            // If no JSON array found, try to parse the entire message
+            tips = JSON.parse(data.message)
+          }
+        } catch (e) {
+          console.error("Failed to parse LLM response:", e)
+          // If parsing fails, create a structured tip from the text response
+          tips = [
+            {
+              title: "Weekly Optimization",
+              description: data.message.substring(0, 150) + "...",
+              icon: "⏱️",
+            },
+          ]
+        }
+      }
+
+      // Ensure we have the right format and fallback if needed
+      if (Array.isArray(tips) && tips.length > 0) {
+        // Make sure each tip has the required fields
+        const validatedTips = tips.map((tip) => ({
+          title: tip.title || "Time Management Tip",
+          description: tip.description || "No description provided",
+          icon: tip.icon || "���️",
+        }))
+        setTimeManagementTips(validatedTips)
+      } else {
+        // If we couldn't get valid tips, use the fallback
+        setTimeManagementTips(fallbackTimeManagementTips)
+      }
+    } catch (error) {
+      console.error("Error fetching time management tips:", error)
+      setTipError("Failed to load personalized tips. Using default recommendations.")
+      setTimeManagementTips(fallbackTimeManagementTips)
+    } finally {
+      setIsLoadingTips(false)
+    }
+  }
 
   useEffect(() => {
     // Only load the script once
@@ -161,6 +259,8 @@ const Newsletter = () => {
     // Simulate loading
     const timer = setTimeout(() => {
       setIsLoading(false)
+      // Once the newsletter is loaded, fetch the time management tips
+      fetchTimeManagementTips()
     }, 1000)
 
     return () => clearTimeout(timer)
@@ -170,6 +270,8 @@ const Newsletter = () => {
     setSelectedDay(day)
     setCurrentView("day")
   }
+
+  if (!isOpen) return null
 
   if (isLoading) {
     return (
@@ -185,13 +287,16 @@ const Newsletter = () => {
   }
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-gray-900/40 to-blue-900/40 backdrop-blur-sm flex justify-center items-center z-50">
+    <div className="fixed inset-0 z-50 flex justify-center items-center">
+      {/* Semi-transparent backdrop that allows the dashboard to be visible */}
+      <div className="absolute inset-0 bg-black/25 backdrop-blur-[2px]" onClick={onClose} />
+
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
         transition={{ duration: 0.3 }}
-        className="bg-white text-black rounded-2xl w-11/12 max-w-7xl h-[90vh] overflow-hidden relative shadow-2xl"
+        className="relative bg-white text-black rounded-2xl w-11/12 max-w-7xl h-[90vh] overflow-hidden shadow-2xl"
       >
         {/* Header */}
         <div className="relative h-40 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 flex items-center justify-center overflow-hidden">
@@ -209,7 +314,7 @@ const Newsletter = () => {
 
           <button
             className="absolute top-4 right-4 text-white/80 hover:text-white text-2xl transition-colors"
-            onClick={() => navigate("/dashboard")}
+            onClick={onClose}
           >
             ✖
           </button>
@@ -246,52 +351,54 @@ const Newsletter = () => {
                 exit={{ opacity: 0 }}
                 className="p-6"
               >
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Left column - Weekly calendar */}
-                  <div className="lg:col-span-2">
-                    <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
-                      <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                        <h2 className="text-xl font-bold text-gray-800">This Week's Schedule</h2>
-                      </div>
-                      <div className="p-6">
-                        <div className="grid grid-cols-7 gap-4">
-                          {weeklySchedule.map((day, index) => (
-                            <motion.div
-                              key={day.day}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: index * 0.05 }}
-                              onClick={() => handleDayClick(day)}
-                              className="cursor-pointer group"
-                            >
-                              <div className="text-center mb-2">
-                                <div className="text-sm font-medium text-gray-500">{day.day.substring(0, 3)}</div>
-                                <div className="text-lg font-bold text-gray-800">{day.date.split(" ")[1]}</div>
+                {/* This Week's Schedule - Full width at the top */}
+                <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 mb-8">
+                  <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                    <h2 className="text-xl font-bold text-gray-800">This Week's Schedule</h2>
+                  </div>
+                  <div className="p-6">
+                    <div className="grid grid-cols-7 gap-4">
+                      {weeklySchedule.map((day, index) => (
+                        <motion.div
+                          key={day.day}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          onClick={() => handleDayClick(day)}
+                          className="cursor-pointer group"
+                        >
+                          <div className="text-center mb-2">
+                            <div className="text-sm font-medium text-gray-500">{day.day.substring(0, 3)}</div>
+                            <div className="text-lg font-bold text-gray-800">{day.date.split(" ")[1]}</div>
+                          </div>
+                          <div className="bg-gray-50 rounded-lg p-3 h-32 overflow-y-auto border border-gray-200 transition-colors group-hover:border-blue-300 group-hover:bg-blue-50">
+                            {day.events.length > 0 ? (
+                              day.events.map((event, idx) => (
+                                <div
+                                  key={idx}
+                                  className={`mb-2 px-2 py-1 rounded text-xs ${categoryColors[event.category].bg} ${categoryColors[event.category].text} truncate`}
+                                >
+                                  {event.time}: {event.title}
+                                </div>
+                              ))
+                            ) : (
+                              <div className="text-center text-gray-400 text-xs h-full flex items-center justify-center">
+                                No events
                               </div>
-                              <div className="bg-gray-50 rounded-lg p-3 h-32 overflow-y-auto border border-gray-200 transition-colors group-hover:border-blue-300 group-hover:bg-blue-50">
-                                {day.events.length > 0 ? (
-                                  day.events.map((event, idx) => (
-                                    <div
-                                      key={idx}
-                                      className={`mb-2 px-2 py-1 rounded text-xs ${categoryColors[event.category].bg} ${categoryColors[event.category].text} truncate`}
-                                    >
-                                      {event.time}: {event.title}
-                                    </div>
-                                  ))
-                                ) : (
-                                  <div className="text-center text-gray-400 text-xs h-full flex items-center justify-center">
-                                    No events
-                                  </div>
-                                )}
-                              </div>
-                            </motion.div>
-                          ))}
-                        </div>
-                      </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      ))}
                     </div>
+                  </div>
+                </div>
 
+                {/* Two-column layout for the remaining widgets */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Left column (1/3 width) - Weekly Highlights and Weekly Stats */}
+                  <div className="md:col-span-1 space-y-6">
                     {/* Weekly highlights */}
-                    <div className="mt-6 bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+                    <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
                       <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
                         <h2 className="text-xl font-bold text-gray-800">Weekly Highlights</h2>
                       </div>
@@ -320,13 +427,108 @@ const Newsletter = () => {
                         </div>
                       </div>
                     </div>
-                    {/* Weather Widget - Ensure it has enough space */}
-                    <div className="mt-6 mb-10 bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+
+                    {/* Weekly stats */}
+                    <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+                      <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                        <h2 className="text-xl font-bold text-gray-800">Weekly Stats</h2>
+                      </div>
+                      <div className="p-6">
+                        <div className="space-y-4">
+                          <div>
+                            <div className="flex justify-between text-sm mb-1">
+                              <span className="text-gray-600">Busiest day</span>
+                              <span className="font-medium text-gray-800">Wednesday (3 events)</span>
+                            </div>
+                          </div>
+                          <div>
+                            <div className="flex justify-between text-sm mb-1">
+                              <span className="text-gray-600">Category breakdown</span>
+                            </div>
+                            <div className="flex h-4 rounded-full overflow-hidden">
+                              <div className="bg-blue-500 w-[30%]" title="Work: 30%"></div>
+                              <div className="bg-purple-500 w-[25%]" title="School: 25%"></div>
+                              <div className="bg-amber-500 w-[25%]" title="Personal: 25%"></div>
+                              <div className="bg-green-500 w-[10%]" title="Health: 10%"></div>
+                              <div className="bg-rose-500 w-[10%]" title="Career: 10%"></div>
+                            </div>
+                            <div className="flex text-xs mt-1 justify-between">
+                              <span className="text-blue-600">Work</span>
+                              <span className="text-purple-600">School</span>
+                              <span className="text-amber-600">Personal</span>
+                              <span className="text-green-600">Health</span>
+                              <span className="text-rose-600">Career</span>
+                            </div>
+                          </div>
+                          <div>
+                            <div className="flex justify-between text-sm mb-1">
+                              <span className="text-gray-600">Free time blocks</span>
+                              <span className="font-medium text-gray-800">8 blocks (24h total)</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right column (2/3 width) - Time Management Tips and Weather */}
+                  <div className="md:col-span-2 space-y-6">
+                    {/* Time management tips - Made expandable */}
+                    <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+                      <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                        <h2 className="text-xl font-bold text-gray-800">Time Management Tips</h2>
+                        {isLoadingTips && (
+                          <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        )}
+                      </div>
+                      <div className="p-6">
+                        {/* This div will expand with content */}
+                        <div className="space-y-6">
+                          {tipError && (
+                            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-amber-700 text-sm mb-4">
+                              {tipError}
+                            </div>
+                          )}
+
+                          {timeManagementTips.map((tip, index) => (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.2 + index * 0.1 }}
+                              className="bg-blue-50 rounded-lg p-4 border border-blue-100"
+                            >
+                              <div className="flex items-start">
+                                <div className="text-3xl mr-3">{tip.icon}</div>
+                                <div className="flex-1">
+                                  <h3 className="font-semibold text-gray-800">{tip.title}</h3>
+                                  <p className="text-gray-600 text-sm mt-1">{tip.description}</p>
+                                </div>
+                              </div>
+                            </motion.div>
+                          ))}
+
+                          {/* Refresh button */}
+                          <div className="flex justify-center">
+                            <button
+                              onClick={fetchTimeManagementTips}
+                              disabled={isLoadingTips}
+                              className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50"
+                            >
+                              {isLoadingTips ? "Generating tips..." : "Refresh Tips"}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Weather Widget - Moved below time management tips */}
+                    <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
                       <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
                         <h2 className="text-xl font-bold text-gray-800">Weather Forecast</h2>
                       </div>
                       <div className="p-6">
-                        <div ref={weatherWidgetRef} className="weather-container min-h-[400px]">
+                        <div ref={weatherWidgetRef} className="weather-container min-h-[300px]">
                           <div
                             className="tomorrow"
                             data-location-id=""
@@ -349,74 +551,6 @@ const Newsletter = () => {
                                 height="18"
                               />
                             </a>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right column - Time management tips */}
-                  <div>
-                    <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
-                      <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                        <h2 className="text-xl font-bold text-gray-800">Time Management Tips</h2>
-                      </div>
-                      <div className="p-6">
-                        <div className="space-y-6">
-                          {timeManagementTips.map((tip, index) => (
-                            <motion.div
-                              key={index}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: 0.2 + index * 0.1 }}
-                              className="bg-blue-50 rounded-lg p-4 border border-blue-100"
-                            >
-                              <div className="flex items-start">
-                                <div className="text-3xl mr-3">{tip.icon}</div>
-                                <div>
-                                  <h3 className="font-semibold text-gray-800">{tip.title}</h3>
-                                  <p className="text-gray-600 text-sm mt-1">{tip.description}</p>
-                                </div>
-                              </div>
-                            </motion.div>
-                          ))}
-                        </div>
-
-                        {/* Weekly stats */}
-                        <div className="mt-8 pt-6 border-t border-gray-200">
-                          <h3 className="text-lg font-semibold text-gray-800 mb-4">Weekly Stats</h3>
-                          <div className="space-y-4">
-                            <div>
-                              <div className="flex justify-between text-sm mb-1">
-                                <span className="text-gray-600">Busiest day</span>
-                                <span className="font-medium text-gray-800">Wednesday (3 events)</span>
-                              </div>
-                            </div>
-                            <div>
-                              <div className="flex justify-between text-sm mb-1">
-                                <span className="text-gray-600">Category breakdown</span>
-                              </div>
-                              <div className="flex h-4 rounded-full overflow-hidden">
-                                <div className="bg-blue-500 w-[30%]" title="Work: 30%"></div>
-                                <div className="bg-purple-500 w-[25%]" title="School: 25%"></div>
-                                <div className="bg-amber-500 w-[25%]" title="Personal: 25%"></div>
-                                <div className="bg-green-500 w-[10%]" title="Health: 10%"></div>
-                                <div className="bg-rose-500 w-[10%]" title="Career: 10%"></div>
-                              </div>
-                              <div className="flex text-xs mt-1 justify-between">
-                                <span className="text-blue-600">Work</span>
-                                <span className="text-purple-600">School</span>
-                                <span className="text-amber-600">Personal</span>
-                                <span className="text-green-600">Health</span>
-                                <span className="text-rose-600">Career</span>
-                              </div>
-                            </div>
-                            <div>
-                              <div className="flex justify-between text-sm mb-1">
-                                <span className="text-gray-600">Free time blocks</span>
-                                <span className="font-medium text-gray-800">8 blocks (24h total)</span>
-                              </div>
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -559,7 +693,6 @@ const Newsletter = () => {
           </AnimatePresence>
         </div>
 
-        {/* Footer - Positioned at the bottom but not fixed to allow scrolling */}
         <div className="h-10 bg-gray-50 border-t border-gray-200 flex items-center justify-between px-6">
           <div className="text-gray-500 text-xs">© 2025 Your.ai Personal Assistant</div>
           <div className="flex space-x-4">
