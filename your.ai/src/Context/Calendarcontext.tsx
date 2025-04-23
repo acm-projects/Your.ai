@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { useAuth } from "./authContext";
 
 interface Event {
   id: string;
@@ -21,22 +20,22 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [events, setEvents] = useState<Event[]>([]);
 
   const fetchEvents = async () => {
-    if (!token) return; // exit early if no token
-    console.log("Fetching calendar events...");
+    console.log("Fetching calendar events..."); 
     try {
-      const { token } = useAuth(); 
+      const token = localStorage.getItem("token"); 
       const response = await fetch("http://localhost:5001/events", {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-  
+
       const data = await response.json();
+
       const formatted = data.map((item: any, idx: number) => {
         const startTime = item.start?.split("T")[1]?.substring(0, 5) || "00:00";
         const endTime = item.end?.split("T")[1]?.substring(0, 5) || "00:00";
-  
+
         return {
           id: String(idx),
           title: item.summary || "No Title",
@@ -46,13 +45,12 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           date: item.start?.split("T")[0],
         };
       });
-  
+
       setEvents(formatted);
     } catch (err) {
       console.error("Failed to fetch events", err);
     }
   };
-  
 
   useEffect(() => {
     fetchEvents();
