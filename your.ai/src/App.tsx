@@ -10,7 +10,7 @@ import TextToSpeech from './components/text-to-speech';
 import Calendar from './components/Calendar'; 
 import TaskBoard from './components/taskBoard';
 import { TaskProvider } from './components/taskContext';
-import { KanbanProvider } from './components/kanbanContext';
+import { KanbanProvider } from './Context/kanbanContext';
 
 const App: React.FC = () => {
   return (

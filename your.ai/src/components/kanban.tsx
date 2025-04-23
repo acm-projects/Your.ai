@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import Sidebar from "./Sidebar";
-import { useKanbanContext } from "./kanbanContext";
+import { useKanbanContext } from "../Context/kanbanContext";
 
 // Types
 type Task = {
