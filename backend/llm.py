@@ -242,7 +242,7 @@ def create_newsletter(llm, token, location="Dallas"):
     print(result)
     return result
 
-def newsletter_wrapper(llm, token):
+def newsletter_wrapper(token):
     newsletter = create_newsletter(llm, token)
     return newsletter
 
@@ -270,7 +270,7 @@ def format_events(response):
         return None
 
 
-def generate_weekly_todos(llm, token):
+def generate_weekly_todos(token):
     # Get current week's start and end times using timezone-aware function
     start_time, end_time, timezone = get_week_range_local()
 
@@ -314,6 +314,6 @@ def generate_weekly_todos(llm, token):
     return todos
 
 
-def kanban_wrapper(llm, token):
+def kanban_wrapper(token):
     todos = generate_weekly_todos(llm, token)
     return todos
