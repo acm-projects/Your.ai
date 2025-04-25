@@ -1,105 +1,160 @@
-import React from "react";
-import { format, addDays, subDays, startOfWeek } from "date-fns";
+"use client";
 
-interface Event {
-  id: string;
-  title: string;
-  startTime: string;
-  endTime: string;
-}
+import React, { useState, useEffect } from "react";
+import { format, addDays, subDays } from "date-fns";
+import { useCalendar } from "../context/CalendarContext";
+import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 
 interface DayViewProps {
   date: Date;
-  events: Event[];
-  onNewEvent?: () => void;
   setDate: (date: Date) => void;
+  onNewEvent?: () => void;
 }
 
-const hours = Array.from({ length: 24 }, (_, i) => i);
+const hours = Array.from({ length: 14 }, (_, i) => i + 8); // 8 AM to 9 PM
 
-const DayView: React.FC<DayViewProps> = ({ date, events, onNewEvent, setDate }) => {
+const DayView: React.FC<DayViewProps> = ({ date, setDate, onNewEvent }) => {
+  const { events, fetchEvents } = useCalendar();
+  const [isLoading, setIsLoading] = useState(true);
+
   const formatTime = (hour: number) => {
     const period = hour >= 12 ? "PM" : "AM";
     const hour12 = hour % 12 || 12;
     return `${hour12} ${period}`;
   };
 
+  useEffect(() => {
+    const load = async () => {
+      setIsLoading(true);
+      await fetchEvents();
+      setIsLoading(false);
+    };
+    load();
+  }, []);
+
+  const currentDateStr = format(date, "yyyy-MM-dd");
+
+  const dayEvents = events.filter((event) => event.date === currentDateStr);
+
   const getEventForHour = (hour: number) => {
-    return events.filter((event) => {
-      const startHour = parseInt(event.startTime.split(":")[0], 10);
-      return startHour === hour;
+    return dayEvents.filter((event) => {
+      // Extract hour from time (assuming format like "9:00 AM")
+      const eventTime = event.time;
+      const [rawHour] = event.time.split(":");
+      const hourInt = parseInt(rawHour, 10);
+      const isPM = event.time.toLowerCase().includes("pm");
+      const fullHour =
+        isPM && hourInt !== 12
+          ? hourInt + 12
+          : hourInt === 12 && !isPM
+          ? 0
+          : hourInt;
+
+      return fullHour === hour;
     });
   };
 
   const goToToday = () => {
-    setDate(startOfWeek(new Date(), { weekStartsOn: 1 }));
+    setDate(new Date());
   };
 
   return (
-    <div className="p-4 bg-white h-full w-full overflow-y-auto">
+    <div className="bg-white rounded-lg shadow-md border overflow-hidden h-full">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex justify-between items-center p-4 border-b bg-gray-50">
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => setDate(subDays(date, 7))}
-            className="text-sm px-3 py-1 border rounded-md text-gray-600 hover:bg-gray-100"
+            onClick={() => setDate(subDays(date, 1))}
+            className="p-1 rounded-full hover:bg-gray-200 transition-colors"
+            aria-label="Previous day"
           >
-            ← Previous Week
+            <ChevronLeft className="h-5 w-5 text-gray-600" />
           </button>
 
-          <h2 className="text-lg font-semibold">
-            {format(date, "MMMM yyyy")} • Week of {format(date, "MMM d")}
+          <h2 className="text-xl font-semibold text-gray-800">
+            {format(date, "EEEE, MMMM d, yyyy")}
           </h2>
 
           <button
-            onClick={() => setDate(addDays(date, 7))}
-            className="text-sm px-3 py-1 border rounded-md text-gray-600 hover:bg-gray-100"
+            onClick={() => setDate(addDays(date, 1))}
+            className="p-1 rounded-full hover:bg-gray-200 transition-colors"
+            aria-label="Next day"
           >
-            Next Week →
+            <ChevronRight className="h-5 w-5 text-gray-600" />
           </button>
 
           <button
             onClick={goToToday}
-            className="border px-3 py-1 rounded-md text-sm text-gray-600 hover:bg-gray-100"
+            className="flex items-center gap-1 border px-3 py-1 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-colors ml-2"
           >
-            Today
-          </button>
-
-          <button
-            onClick={onNewEvent}
-            className="bg-black text-white px-4 py-1 rounded-md text-sm hover:bg-gray-800"
-          >
-            + New event
+            <Calendar className="h-4 w-4" />
+            <span>Today</span>
           </button>
         </div>
+
+        <button
+          onClick={onNewEvent}
+          className="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm hover:bg-indigo-700 transition-colors font-medium"
+        >
+          + New event
+        </button>
       </div>
 
-      {/* Timeline */}
-      <div className="border-t border-gray-200">
-        {hours.map((hour) => (
-          <div key={hour} className="flex h-16 px-4 items-center relative">
-            {/* Time label */}
-            <div className="w-16 text-right text-xs text-gray-400 pr-4">
-              {formatTime(hour)}
-            </div>
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      ) : (
+        <div
+          className="overflow-y-auto"
+          style={{ height: "calc(100% - 72px)" }}
+        >
+          {/* Timeline */}
+          <div className="border-t border-gray-200">
+            {hours.map((hour) => {
+              const isCurrentHour =
+                new Date().getHours() === hour &&
+                format(new Date(), "yyyy-MM-dd") === currentDateStr;
 
-            {/* Line + Events */}
-            <div className="flex-1 h-px bg-gray-200 relative">
-              {getEventForHour(hour).map((event) => (
+              return (
                 <div
-                  key={event.id}
-                  className="absolute top-1 left-0 bg-blue-100 text-blue-900 px-3 py-2 rounded shadow text-sm w-60"
+                  key={hour}
+                  className={`flex min-h-[80px] border-b border-gray-100 ${
+                    isCurrentHour ? "bg-blue-50" : "hover:bg-gray-50"
+                  } transition-colors`}
                 >
-                  <strong>{event.title}</strong>
-                  <div className="text-xs">
-                    {event.startTime} - {event.endTime}
+                  {/* Time label */}
+                  <div className="w-20 text-right text-sm text-gray-500 font-medium p-2 border-r border-gray-100">
+                    {formatTime(hour)}
+                  </div>
+
+                  {/* Events container */}
+                  <div className="flex-1 relative p-2">
+                    {getEventForHour(hour).map((event, index) => (
+                      <div
+                        key={event.id}
+                        className={`mb-2 p-3 rounded-md shadow-sm hover:shadow-md transition-shadow cursor-pointer text-white ${
+                          event.color || "bg-blue-500"
+                        }`}
+                        style={{
+                          marginLeft: `${index * 10}px`,
+                          maxWidth: "calc(100% - 20px)",
+                        }}
+                      >
+                        <div className="font-semibold">{event.title}</div>
+                        <div className="text-xs mt-1 opacity-90">
+                          {event.startTime}{" "}
+                          {event.endTime ? `- ${event.endTime}` : ""}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

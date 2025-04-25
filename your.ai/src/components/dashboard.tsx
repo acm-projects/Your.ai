@@ -1,34 +1,41 @@
-"use client";
+"use client"
 
-import React, { useEffect, useState } from "react";
-import { CalendarClock, Clock, ListTodo, Calendar } from "lucide-react";
-import WeeklyCalendar from "./weeklyCalendar";
-import UpcomingEvents from "../components/upcomingEvents";
-import WeeklySummary from "../components/weeklySummary";
-import TaskBoard from "./taskBoard";
-import Sidebar from "./Sidebar";
-import Newsletter from "../components/newsletter";
-import { useAuth } from "../Context/authContext";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
+import type React from "react"
+import { useEffect, useState } from "react"
+import { CalendarClock, Clock, ListTodo, Calendar } from "lucide-react"
+import WeeklyCalendar from "./weeklyCalendar"
+import UpcomingEvents from "../components/UpcomingEvents"
+import WeeklySummary from "../components/WeeklySummary"
+import TaskBoard from "./taskBoard"
+import Sidebar from "./Sidebar"
+import Newsletter from "../components/newsletter"
+import { useAuth } from "../Context/authContext"
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+import timezone from "dayjs/plugin/timezone"
 
-dayjs.extend(utc);
-dayjs.extend(timezone);
+dayjs.extend(utc)
+dayjs.extend(timezone)
 
 interface Event {
-  id: string;
-  title: string;
-  time: string;
-  date: string;
+  id: string
+  title: string
+  time: string
+  date: string
+}
+
+interface ApiEvent {
+  summary: string
+  start: string
+  end: string
 }
 
 type StatsCardProps = {
-  title: string;
-  value: string | number;
-  icon: React.ReactNode;
-  subtitle: string;
-};
+  title: string
+  value: string | number
+  icon: React.ReactNode
+  subtitle: string
+}
 
 function StatsCard({ title, value, icon, subtitle }: StatsCardProps) {
   return (
@@ -42,22 +49,17 @@ function StatsCard({ title, value, icon, subtitle }: StatsCardProps) {
         <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
       </div>
     </div>
-  );
+  )
 }
 
 type SectionCardProps = {
-  title: string;
-  subtitle: string;
-  children: React.ReactNode;
-  className?: string;
-};
+  title: string
+  subtitle: string
+  children: React.ReactNode
+  className?: string
+}
 
-function SectionCard({
-  title,
-  subtitle,
-  children,
-  className = "",
-}: SectionCardProps) {
+function SectionCard({ title, subtitle, children, className = "" }: SectionCardProps) {
   return (
     <div
       className={`rounded-2xl border bg-white shadow-md hover:shadow-lg transition-shadow duration-300 ${className}`}
@@ -68,19 +70,99 @@ function SectionCard({
       </div>
       <div className="p-6">{children}</div>
     </div>
-  );
+  )
 }
 
 export default function Dashboard() {
-  const { token } = useAuth();
-  const [isNewsletterOpen, setIsNewsletterOpen] = useState(false);
-  const [todaysEvents, setTodaysEvents] = useState<Event[]>([]);
+  const { token } = useAuth()
+  const [isNewsletterOpen, setIsNewsletterOpen] = useState(false)
+  const [todaysEvents, setTodaysEvents] = useState<Event[]>([])
+  const [allEvents, setAllEvents] = useState<ApiEvent[]>([])
+  const [freeTime, setFreeTime] = useState({ hours: "0", timeSlot: "No free time available" })
+  const [weekProgress, setWeekProgress] = useState({ percentage: "0%", daysCompleted: "0 of 0 days completed" })
+  const [isLoading, setIsLoading] = useState(true)
 
-  const openNewsletter = () => setIsNewsletterOpen(true);
-  const closeNewsletter = () => setIsNewsletterOpen(false);
+  const openNewsletter = () => setIsNewsletterOpen(true)
+  const closeNewsletter = () => setIsNewsletterOpen(false)
+
+  // Calculate free time based on today's events
+  const calculateFreeTime = (events: ApiEvent[]) => {
+    const today = dayjs().format("YYYY-MM-DD")
+    const todayEvents = events.filter((event) => event.start.startsWith(today))
+
+    if (todayEvents.length === 0) {
+      return { hours: "8", timeSlot: "All day" }
+    }
+
+    // Sort events by start time
+    todayEvents.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+
+    // Calculate total busy time (assuming each event takes its full duration)
+    let totalBusyHours = 0
+    let largestGap = { start: null, end: null, duration: 0 }
+
+    for (let i = 0; i < todayEvents.length; i++) {
+      const event = todayEvents[i]
+      const startTime = dayjs(event.start)
+      const endTime = dayjs(event.end)
+      const duration = endTime.diff(startTime, "hour", true)
+      totalBusyHours += duration
+
+      // Find largest gap between events
+      if (i < todayEvents.length - 1) {
+        const nextEvent = todayEvents[i + 1]
+        const gapStart = endTime
+        const gapEnd = dayjs(nextEvent.start)
+        const gapDuration = gapEnd.diff(gapStart, "hour", true)
+
+        if (gapDuration > largestGap.duration) {
+          largestGap = {
+            start: gapStart,
+            end: gapEnd,
+            duration: gapDuration,
+          }
+        }
+      }
+    }
+
+    // Assuming 12 working hours in a day (8am-8pm)
+    const freeHours = Math.max(0, 12 - totalBusyHours)
+
+    // Format the time slot string
+    let timeSlot = "No significant free time blocks"
+    if (largestGap.duration > 1 && largestGap.start && largestGap.end) {
+      timeSlot = `Today between ${largestGap.start.format("h:mm A")} - ${largestGap.end.format("h:mm A")}`
+    } else if (freeHours > 4) {
+      timeSlot = "Several hours available throughout the day"
+    }
+
+    return {
+      hours: freeHours.toFixed(1),
+      timeSlot: timeSlot,
+    }
+  }
+
+  // Calculate week progress
+  const calculateWeekProgress = () => {
+    const today = dayjs()
+    const dayOfWeek = today.day() // 0 is Sunday, 6 is Saturday
+
+    // Convert to Monday-based week (1-7)
+    const adjustedDay = dayOfWeek === 0 ? 7 : dayOfWeek
+
+    // Calculate percentage (assuming 5-day work week)
+    const workDaysCompleted = Math.min(adjustedDay - 1, 5) // Monday-Friday
+    const percentage = Math.round((workDaysCompleted / 5) * 100)
+
+    return {
+      percentage: `${percentage}%`,
+      daysCompleted: `${workDaysCompleted} of 5 days completed`,
+    }
+  }
 
   useEffect(() => {
-    const fetchTodaysEvents = async () => {
+    const fetchEvents = async () => {
+      setIsLoading(true)
       try {
         const response = await fetch("http://localhost:5001/events", {
           method: "GET",
@@ -88,33 +170,42 @@ export default function Dashboard() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-        });
+        })
 
-        if (!response.ok) throw new Error("Failed to fetch events");
+        if (!response.ok) throw new Error("Failed to fetch events")
 
-        const data = await response.json();
-        const today = dayjs().format("YYYY-MM-DD");
+        const data = await response.json()
+        setAllEvents(data)
 
+        const today = dayjs().format("YYYY-MM-DD")
         const filtered = data
           .filter((event: any) => event.start.startsWith(today))
           .map((item: any, idx: number) => {
-            const timeStr = item.start?.split("T")[1]?.substring(0, 5) || "00:00";
+            const timeStr = item.start?.split("T")[1]?.substring(0, 5) || "00:00"
             return {
               id: String(idx),
               title: item.summary || "No Title",
               time: timeStr,
               date: item.start,
-            };
-          });
+            }
+          })
 
-        setTodaysEvents(filtered);
+        setTodaysEvents(filtered)
+
+        // Calculate stats from events data
+        setFreeTime(calculateFreeTime(data))
+        setWeekProgress(calculateWeekProgress())
       } catch (err) {
-        console.error("Failed to load today's events:", err);
+        console.error("Failed to load events:", err)
+      } finally {
+        setIsLoading(false)
       }
-    };
+    }
 
-    fetchTodaysEvents();
-  }, [token]);
+    if (token) {
+      fetchEvents()
+    }
+  }, [token])
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-gray-800">
@@ -123,12 +214,8 @@ export default function Dashboard() {
       <div className="flex-1 space-y-6 p-4 md:p-8 bg-gray-50 overflow-y-auto">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 px-2 py-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-800">
-              Dashboard
-            </h1>
-            <p className="text-gray-500">
-              Welcome back! Here's an overview of your week.
-            </p>
+            <h1 className="text-3xl font-bold tracking-tight text-gray-800">Dashboard</h1>
+            <p className="text-gray-500">Welcome back! Here's an overview of your week.</p>
           </div>
           <div className="flex gap-2">
             <button
@@ -160,8 +247,8 @@ export default function Dashboard() {
           />
           <StatsCard
             title="Free Time"
-            value="4.5h"
-            subtitle="Today between 1:00 PM - 5:30 PM"
+            value={`${freeTime.hours}h`}
+            subtitle={freeTime.timeSlot}
             icon={<Clock className="h-5 w-5 text-green-500" />}
           />
           <StatsCard
@@ -172,8 +259,8 @@ export default function Dashboard() {
           />
           <StatsCard
             title="Week Progress"
-            value="40%"
-            subtitle="2 of 5 days completed"
+            value={weekProgress.percentage}
+            subtitle={weekProgress.daysCompleted}
             icon={
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -193,38 +280,22 @@ export default function Dashboard() {
 
         {/* Weekly Calendar and Upcoming Events */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-          <SectionCard
-            title="Week at a Glance"
-            subtitle="Your schedule for this week"
-            className="col-span-4"
-          >
+          <SectionCard title="Week at a Glance" subtitle="Your schedule for this week" className="col-span-4">
             <WeeklyCalendar />
           </SectionCard>
 
-          <SectionCard
-            title="Upcoming Events"
-            subtitle="Your next appointments and deadlines"
-            className="col-span-3"
-          >
+          <SectionCard title="Upcoming Events" subtitle="Your next appointments and deadlines" className="col-span-3">
             <UpcomingEvents />
           </SectionCard>
         </div>
 
         {/* Weekly Summary and Task Board */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-          <SectionCard
-            title="Weekly Summary"
-            subtitle="Time management suggestions"
-            className="col-span-3"
-          >
+          <SectionCard title="Weekly Summary" subtitle="Time management suggestions" className="col-span-3">
             <WeeklySummary />
           </SectionCard>
 
-          <SectionCard
-            title="Task Board"
-            subtitle="Manage your to-do list"
-            className="col-span-4"
-          >
+          <SectionCard title="Task Board" subtitle="Manage your to-do list" className="col-span-4">
             <TaskBoard />
           </SectionCard>
         </div>
@@ -233,5 +304,5 @@ export default function Dashboard() {
       {/* Newsletter Modal */}
       <Newsletter isOpen={isNewsletterOpen} onClose={closeNewsletter} />
     </div>
-  );
+  )
 }

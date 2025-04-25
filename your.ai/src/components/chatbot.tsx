@@ -4,6 +4,7 @@ import type React from "react";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bot, Send, X, MessageSquare } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { useCalendar } from "../Context/Calendarcontext";
 
 interface Message {
@@ -32,8 +33,7 @@ const Chatbot: React.FC = () => {
   const [isBotTyping, setIsBotTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  
-  // API URL - should come from environment variable in production
+
   const API_URL = "http://localhost:5001";
 
   const scrollToBottom = () => {
@@ -63,17 +63,17 @@ const Chatbot: React.FC = () => {
     try {
       // Get the token from localStorage (same as in your CalendarContext)
       const token = localStorage.getItem("token");
-      
+
       if (!token) {
         throw new Error("Authentication token not found");
       }
 
       // Call the LLM API endpoint
       const response = await fetch(`${API_URL}/llm/question`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ question: text }),
       });
@@ -83,27 +83,32 @@ const Chatbot: React.FC = () => {
       }
 
       const data = await response.json();
-      
-      // Add the bot message to the chat
+      const messageText =
+        typeof data.message === "string"
+          ? data.message
+          : "Sorry, I couldn't process that request.";
+
       const newMessage: Message = {
         id: messages.length + 2,
-        text: data.message || "Sorry, I couldn't process that request.",
+        text: messageText,
         sender: "bot",
         timestamp: new Date().toLocaleTimeString(),
       };
 
       setMessages((prev) => [...prev, newMessage]);
-      
+
       // Refresh calendar events if the interaction likely modified the calendar
-      if (text.toLowerCase().includes("schedule") || 
-          text.toLowerCase().includes("meeting") ||
-          text.toLowerCase().includes("calendar") ||
-          text.toLowerCase().includes("event")) {
+      if (
+        text.toLowerCase().includes("schedule") ||
+        text.toLowerCase().includes("meeting") ||
+        text.toLowerCase().includes("calendar") ||
+        text.toLowerCase().includes("event")
+      ) {
         await fetchEvents();
       }
     } catch (error) {
       console.error("Error processing request:", error);
-      
+
       // Add error message
       const errorMessage: Message = {
         id: messages.length + 2,
@@ -111,7 +116,7 @@ const Chatbot: React.FC = () => {
         sender: "bot",
         timestamp: new Date().toLocaleTimeString(),
       };
-      
+
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsBotTyping(false);
@@ -250,7 +255,25 @@ const Chatbot: React.FC = () => {
                         : "bg-white text-gray-800 border border-gray-200 shadow-sm"
                     } p-3`}
                   >
-                    <p className="text-sm">{message.text}</p>
+                    <div className="text-sm">
+                      {message.sender === "bot" &&
+                      typeof message.text === "string" ? (
+                        <div className="prose prose-sm max-w-none text-gray-800">
+                        <ReactMarkdown >
+                          {message.text}
+                        </ReactMarkdown>
+                        </div>
+                      ) : (
+                        <span className="text-sm">
+                          {message.text || (
+                            <span className="text-gray-400 italic">
+                              [No message]
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </div>
+
                     <span
                       className={`text-xs mt-1 block ${
                         message.sender === "user"
