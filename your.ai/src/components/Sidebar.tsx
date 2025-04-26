@@ -275,15 +275,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
               isActive={isActive("/calendar")}
               onClick={onCloseMobile}
             />
-            <NewsletterLink
-              icon={<Newspaper size={18} />}
-              label="Newsletter"
-              isActive={false}
-              onOpenNewsletter={() => {
-                if (onCloseMobile) onCloseMobile();
-                onOpenNewsletter();
-              }}
-            />
+
             <SidebarLink
               to="/kanban"
               icon={<Kanban size={18} />}
