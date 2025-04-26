@@ -1,44 +1,53 @@
-import React, { useEffect, useState, useRef } from "react";
-import { Link } from "react-router-dom";
-import Sidebar from "./Sidebar";
-import { useKanbanContext } from "../Context/kanbanContext";
-import { useTaskContext } from "./taskContext";
+"use client"
+
+import type React from "react"
+import { useEffect, useState, useRef } from "react"
+import { Link } from "react-router-dom"
+import Sidebar from "./Sidebar"
+import { useKanbanContext } from "../Context/kanbanContext"
+import { useTaskContext } from "./taskContext"
+import Newsletter from "../components/newsletter"
+import { CalendarClock } from "lucide-react"
 
 type Task = {
-  id: number;
-  title: string;
-  priority: string;
-  dueDate: string;
-};
+  id: number
+  title: string
+  priority: string
+  dueDate: string
+}
 
 type Column = {
-  id: string;
-  name: string;
-  tasks: Task[];
-  color: string;
-  icon: string;
-};
+  id: string
+  name: string
+  tasks: Task[]
+  color: string
+  icon: string
+}
 
 const Kanban: React.FC = () => {
-  const { columns, setColumns } = useKanbanContext();
-  const { tasks } = useTaskContext();
-  const [newTaskTitle, setNewTaskTitle] = useState<string>("");
-  const [newTaskPriority, setNewTaskPriority] = useState<"low" | "medium" | "high">("medium");
-  const [draggedItem, setDraggedItem] = useState<number | null>(null);
-  const [isAddingTask, setIsAddingTask] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const { columns, setColumns } = useKanbanContext()
+  const { tasks } = useTaskContext()
+  const [newTaskTitle, setNewTaskTitle] = useState<string>("")
+  const [newTaskPriority, setNewTaskPriority] = useState<"low" | "medium" | "high">("medium")
+  const [draggedItem, setDraggedItem] = useState<number | null>(null)
+  const [isAddingTask, setIsAddingTask] = useState<string | null>(null)
+  const [isNewsletterOpen, setIsNewsletterOpen] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const openNewsletter = () => setIsNewsletterOpen(true)
+  const closeNewsletter = () => setIsNewsletterOpen(false)
 
   // Sync columns with context tasks
   useEffect(() => {
     setColumns((prev) =>
       prev.map((col) => {
-        if (col.id === "todo") return { ...col, tasks: tasks.todo };
-        if (col.id === "inProgress") return { ...col, tasks: tasks.inProgress };
-        if (col.id === "done") return { ...col, tasks: tasks.done };
-        return col;
-      })
-    );
-  }, [tasks]);
+        if (col.id === "todo") return { ...col, tasks: tasks.todo }
+        if (col.id === "inProgress") return { ...col, tasks: tasks.inProgress }
+        if (col.id === "done") return { ...col, tasks: tasks.done }
+        return col
+      }),
+    )
+  }, [tasks, setColumns])
 
   const handleAddTask = (columnId: string) => {
     if (newTaskTitle.trim()) {
@@ -46,79 +55,81 @@ const Kanban: React.FC = () => {
         id: Date.now(),
         title: newTaskTitle,
         priority: newTaskPriority,
-        dueDate: "Today",
-      };
+        dueDate: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true }),
+      }
 
-      setColumns((prev) =>
-        prev.map((col) =>
-          col.id === columnId ? { ...col, tasks: [...col.tasks, newTask] } : col
-        )
-      );
+      setColumns((prev) => prev.map((col) => (col.id === columnId ? { ...col, tasks: [...col.tasks, newTask] } : col)))
 
-      setNewTaskTitle("");
-      setNewTaskPriority("medium");
-      setIsAddingTask(null);
+      setNewTaskTitle("")
+      setNewTaskPriority("medium")
+      setIsAddingTask(null)
     }
-  };
+  }
 
   const handleRemoveTask = (taskId: number, columnId: string) => {
     setColumns((prev) =>
       prev.map((col) =>
-        col.id === columnId
-          ? { ...col, tasks: col.tasks.filter((task) => task.id !== taskId) }
-          : col
-      )
-    );
-  };
+        col.id === columnId ? { ...col, tasks: col.tasks.filter((task) => task.id !== taskId) } : col,
+      ),
+    )
+  }
 
   const handleDragStart = (e: React.DragEvent, columnId: string, taskId: number) => {
-    e.dataTransfer.setData("taskId", taskId.toString());
-    e.dataTransfer.setData("columnId", columnId);
-    setDraggedItem(taskId);
-  };
+    e.dataTransfer.setData("taskId", taskId.toString())
+    e.dataTransfer.setData("columnId", columnId)
+    setDraggedItem(taskId)
+  }
 
   const handleDrop = (e: React.DragEvent, columnId: string) => {
-    const taskId = parseInt(e.dataTransfer.getData("taskId"), 10);
-    const sourceColumnId = e.dataTransfer.getData("columnId");
+    const taskId = Number.parseInt(e.dataTransfer.getData("taskId"), 10)
+    const sourceColumnId = e.dataTransfer.getData("columnId")
 
-    if (!taskId || sourceColumnId === columnId) return;
+    if (!taskId || sourceColumnId === columnId) return
 
     setColumns((prev) => {
-      const newCols = [...prev];
-      const sourceCol = newCols.find((c) => c.id === sourceColumnId);
-      const targetCol = newCols.find((c) => c.id === columnId);
-      if (!sourceCol || !targetCol) return prev;
+      const newCols = [...prev]
+      const sourceCol = newCols.find((c) => c.id === sourceColumnId)
+      const targetCol = newCols.find((c) => c.id === columnId)
+      if (!sourceCol || !targetCol) return prev
 
-      const taskIndex = sourceCol.tasks.findIndex((task) => task.id === taskId);
-      if (taskIndex === -1) return prev;
+      const taskIndex = sourceCol.tasks.findIndex((task) => task.id === taskId)
+      if (taskIndex === -1) return prev
 
-      const [movedTask] = sourceCol.tasks.splice(taskIndex, 1);
-      targetCol.tasks.push(movedTask);
-      return [...newCols];
-    });
+      const [movedTask] = sourceCol.tasks.splice(taskIndex, 1)
+      targetCol.tasks.push(movedTask)
+      return [...newCols]
+    })
 
-    setDraggedItem(null);
-  };
+    setDraggedItem(null)
+  }
 
-  const handleDragOver = (e: React.DragEvent) => e.preventDefault();
-  const handleDragEnd = () => setDraggedItem(null);
+  const handleDragOver = (e: React.DragEvent) => e.preventDefault()
+  const handleDragEnd = () => setDraggedItem(null)
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-gray-800">
       <Sidebar />
       <div className="kanban-board flex-grow min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6 overflow-x-auto">
-        <div className="flex justify-between items-center mb-8 relative">
-          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 text-center w-full">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 relative">
+          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
             Task Flow
           </h1>
-          <Link
-            to="/dashboard"
-            className="absolute top-2 right-4 text-sm bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full text-indigo-600 hover:text-indigo-800 hover:bg-white transition shadow-sm"
-          >
-            ⬅ Back to Dashboard
-          </Link>
+          <div className="flex gap-2 mt-4 md:mt-0">
+            <button
+              onClick={openNewsletter}
+              className="inline-flex items-center gap-2 rounded-md text-sm font-medium bg-indigo-600 text-white h-10 px-4 py-2 hover:bg-indigo-700 transition-colors"
+            >
+              Weekly Digest
+            </button>
+            <Link
+              to="/dashboard"
+              className="inline-flex items-center gap-2 rounded-md text-sm font-medium bg-white text-indigo-600 border border-indigo-200 h-10 px-4 py-2 hover:bg-indigo-50 transition-colors"
+            >
+              ⬅ Back to Dashboard
+            </Link>
+          </div>
         </div>
-        <div className="flex gap-6 min-w-fit">
+        <div className="flex justify-center gap-6 min-w-fit">
           {columns.map((column) => (
             <div
               key={column.id}
@@ -164,7 +175,15 @@ const Kanban: React.FC = () => {
                       </button>
                     </div>
                     <div className="flex items-center justify-between text-xs">
-                      <span className="px-2 py-1 rounded-full bg-blue-100 text-blue-800 border-blue-300 text-xs border">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs border ${
+                          task.priority === "low"
+                            ? "bg-blue-100 text-blue-800 border-blue-300"
+                            : task.priority === "medium"
+                              ? "bg-amber-100 text-amber-800 border-amber-300"
+                              : "bg-red-100 text-red-800 border-red-300"
+                        }`}
+                      >
                         {task.priority}
                       </span>
                       <span className="text-gray-500">{task.dueDate}</span>
@@ -198,13 +217,13 @@ const Kanban: React.FC = () => {
                               ? level === "low"
                                 ? "bg-blue-500 text-white"
                                 : level === "medium"
-                                ? "bg-amber-500 text-white"
-                                : "bg-red-500 text-white"
+                                  ? "bg-amber-500 text-white"
+                                  : "bg-red-500 text-white"
                               : level === "low"
-                              ? "bg-blue-100 text-blue-800"
-                              : level === "medium"
-                              ? "bg-amber-100 text-amber-800"
-                              : "bg-red-100 text-red-800"
+                                ? "bg-blue-100 text-blue-800"
+                                : level === "medium"
+                                  ? "bg-amber-100 text-amber-800"
+                                  : "bg-red-100 text-red-800"
                           }`}
                         >
                           {level.charAt(0).toUpperCase() + level.slice(1)}
@@ -230,7 +249,7 @@ const Kanban: React.FC = () => {
               ) : (
                 <button
                   onClick={() => setIsAddingTask(column.id)}
-                  className="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-md text-sm"
+                  className="mt-4 w-full bg-indigo-600 text-white px-4 py-2 rounded-md text-sm hover:bg-indigo-700 transition-colors"
                 >
                   + Add Task
                 </button>
@@ -239,8 +258,11 @@ const Kanban: React.FC = () => {
           ))}
         </div>
       </div>
-    </div>
-  );
-};
 
-export default Kanban;
+      {/* Newsletter Modal */}
+      <Newsletter isOpen={isNewsletterOpen} onClose={closeNewsletter} />
+    </div>
+  )
+}
+
+export default Kanban
