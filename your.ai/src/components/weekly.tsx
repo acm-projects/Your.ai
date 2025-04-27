@@ -1,19 +1,25 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs"
-import { DateCalendar } from "@mui/x-date-pickers/DateCalendar"
-import type { Dayjs } from "dayjs"
-import dayjs from "dayjs"
-import { useCalendar } from "../context/CalendarContext"
-import { CheckCircle2, Circle, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
+import type React from "react";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
+import type { Dayjs } from "dayjs";
+import dayjs from "dayjs";
+import { useCalendar } from "../context/CalendarContext";
+import {
+  CheckCircle2,
+  Circle,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 interface WeeklyWithSidebarProps {
-  selectedDate: Dayjs | null
-  setSelectedDate: (date: Dayjs | null) => void
-  categories: Record<string, boolean>
-  handleCategoryChange: (key: string) => void
+  selectedDate: Dayjs | null;
+  setSelectedDate: (date: Dayjs | null) => void;
+  categories: Record<string, boolean>;
+  handleCategoryChange: (key: string) => void;
 }
 
 // Update the Weekly component to handle dates correctly
@@ -23,83 +29,93 @@ const Weekly: React.FC<WeeklyWithSidebarProps> = ({
   categories,
   handleCategoryChange,
 }) => {
-  const { events, isLoading, fetchEvents } = useCalendar()
+  const { events, isLoading, fetchEvents } = useCalendar();
 
   // Ensure we have a valid start of week
-  const startOfWeek = selectedDate ? selectedDate.startOf("week") : dayjs().startOf("week")
-  const daysOfWeek = Array.from({ length: 7 }, (_, i) => startOfWeek.add(i, "day"))
+  const startOfWeek =
+    selectedDate && selectedDate.isValid()
+      ? selectedDate.startOf("week")
+      : dayjs().startOf("week");
+  const daysOfWeek = Array.from({ length: 7 }, (_, i) =>
+    startOfWeek.add(i, "day")
+  );
 
   // Filter events based on the selected week
   const filteredEvents = events.filter((event) => {
-    if (!event.date) return false
+    if (!event.date) return false;
 
     try {
-      const eventDate = new Date(event.date)
-      const weekStart = startOfWeek.toDate()
-      const weekEnd = startOfWeek.add(6, "day").toDate()
-      return eventDate >= weekStart && eventDate <= weekEnd
+      const eventDate = new Date(event.date);
+      const weekStart = startOfWeek.toDate();
+      const weekEnd = startOfWeek.add(6, "day").toDate();
+      return eventDate >= weekStart && eventDate <= weekEnd;
     } catch (e) {
-      return false // Skip events with invalid dates instead of logging errors
+      return false;
     }
-  })
+  });
 
   // Format time to ensure 12-hour format
   const formatTime = (timeString: string) => {
-    if (!timeString) return ""
+    if (!timeString) return "";
 
     if (timeString.includes("AM") || timeString.includes("PM")) {
-      return timeString
+      return timeString;
     }
 
     try {
-      const time = new Date(`2000-01-01T${timeString}`)
-      return time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true })
+      const time = new Date(`2000-01-01T${timeString}`);
+      if (isNaN(time.getTime())) return ""; // <--- ADD THIS LINE TO HIDE invalid dates
+      return time.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
     } catch (e) {
-      return timeString
+      return "";
     }
-  }
+  };
 
   // Extract hour from time string (e.g., "9:00 AM")
   const getHourFromTimeString = (timeString: string): number => {
-    if (!timeString) return 0
+    if (!timeString) return 0;
 
     try {
-      const matches = timeString.match(/(\d+):/)
+      const matches = timeString.match(/(\d+):/);
       if (matches) {
-        let hour = Number.parseInt(matches[1], 10)
-        if (timeString.includes("PM") && hour !== 12) hour += 12
-        if (timeString.includes("AM") && hour === 12) hour = 0
-        return hour
+        let hour = Number.parseInt(matches[1], 10);
+        if (timeString.includes("PM") && hour !== 12) hour += 12;
+        if (timeString.includes("AM") && hour === 12) hour = 0;
+        return hour;
       }
     } catch (e) {
       // Silent error handling
     }
-    return 0
-  }
+    return 0;
+  };
 
   // Check if an event is in the past
   const isPastEvent = (date: string, time: string): boolean => {
     try {
-      const eventDateTime = new Date(`${date}T${time.replace(/\s?[AP]M/, "")}`)
-      return eventDateTime < new Date()
+      const eventDateTime = new Date(`${date}T${time.replace(/\s?[AP]M/, "")}`);
+      return eventDateTime < new Date();
     } catch (e) {
-      return false
+      return false;
     }
-  }
+  };
 
   // Navigate to previous/next week
   const goToPreviousWeek = () => {
-    setSelectedDate(startOfWeek.subtract(7, "day"))
-  }
+    setSelectedDate(startOfWeek.subtract(7, "day"));
+  };
 
   const goToNextWeek = () => {
-    setSelectedDate(startOfWeek.add(7, "day"))
-  }
+    setSelectedDate(startOfWeek.add(7, "day"));
+  };
 
   // Refresh events
   const refreshEvents = () => {
-    fetchEvents()
-  }
+    fetchEvents();
+  };
 
   return (
     <div className="flex flex-col lg:flex-row gap-6">
@@ -116,9 +132,13 @@ const Weekly: React.FC<WeeklyWithSidebarProps> = ({
           </button>
 
           <div className="flex flex-col items-center">
-            <h2 className="text-xl font-semibold text-gray-800">Week of {startOfWeek.format("MMMM D, YYYY")}</h2>
+            <h2 className="text-xl font-semibold text-gray-800">
+              Week of{" "}
+              {startOfWeek?.isValid() ? startOfWeek.format("MMMM D, YYYY") : ""}
+            </h2>
             <div className="text-sm text-gray-500 mt-1">
-              {startOfWeek.format("MMM D")} - {startOfWeek.add(6, "day").format("MMM D, YYYY")}
+              {startOfWeek.format("MMM D")} -{" "}
+              {startOfWeek.add(6, "day").format("MMM D, YYYY")}
             </div>
           </div>
 
@@ -156,12 +176,23 @@ const Weekly: React.FC<WeeklyWithSidebarProps> = ({
 
         {/* Weekday Labels */}
         <div className="grid grid-cols-7 text-center text-gray-700 border-b py-3 font-medium bg-gray-50">
-          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day, index) => (
-            <div key={day} className={`${index === new Date().getDay() ? "text-indigo-600 font-semibold" : ""}`}>
-              {day}
-              <div className="text-xs text-gray-500 mt-1">{daysOfWeek[index].format("MMM D")}</div>
-            </div>
-          ))}
+          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
+            (day, index) => (
+              <div
+                key={day}
+                className={`${
+                  index === new Date().getDay()
+                    ? "text-indigo-600 font-semibold"
+                    : ""
+                }`}
+              >
+                {day}
+                <div className="text-xs text-gray-500 mt-1">
+                  {daysOfWeek[index].format("MMM D")}
+                </div>
+              </div>
+            )
+          )}
         </div>
 
         {isLoading ? (
@@ -171,65 +202,78 @@ const Weekly: React.FC<WeeklyWithSidebarProps> = ({
         ) : (
           <div className="divide-y">
             {Array.from({ length: 12 }).map((_, i) => {
-              const hour = i + 9
-              const hour12 = hour % 12 === 0 ? 12 : hour % 12
-              const ampm = hour >= 12 ? "PM" : "AM"
+              const hour = i + 9;
+              const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+              const ampm = hour >= 12 ? "PM" : "AM";
 
               return (
-                <div key={i} className="flex px-4 py-3 hover:bg-gray-50 transition-colors">
+                <div
+                  key={i}
+                  className="flex px-4 py-3 hover:bg-gray-50 transition-colors"
+                >
                   <div className="w-20 text-gray-500 text-sm font-medium">{`${hour12}:00 ${ampm}`}</div>
                   <div className="flex flex-1">
                     {daysOfWeek.map((day, dayIndex) => {
-                      const formattedDate = day.format("YYYY-MM-DD")
+                      const formattedDate = day.format("YYYY-MM-DD");
                       const dayEvents = filteredEvents.filter((event) => {
-                        if (!event.date || !event.time) return false
+                        if (!event.date || !event.time) return false;
 
-                        const eventDate = event.date
-                        const eventHour = getHourFromTimeString(event.time)
+                        const eventDate = event.date;
+                        const eventHour = getHourFromTimeString(event.time);
 
-                        return eventDate === formattedDate && eventHour === hour
-                      })
+                        return (
+                          eventDate === formattedDate && eventHour === hour
+                        );
+                      });
 
                       const isCurrentHourAndDay =
                         new Date().getDay() === dayIndex &&
                         new Date().getHours() === hour &&
-                        new Date().toISOString().split("T")[0] === formattedDate
+                        new Date().toISOString().split("T")[0] ===
+                          formattedDate;
 
                       return (
                         <div
                           key={dayIndex}
-                          className={`flex-1 relative min-h-[60px] border-l ${isCurrentHourAndDay ? "bg-blue-50" : ""}`}
+                          className={`flex-1 relative min-h-[60px] border-l ${
+                            isCurrentHourAndDay ? "bg-blue-50" : ""
+                          }`}
                         >
                           {dayEvents.map((event) => {
-                            const isPast = isPastEvent(event.date, event.time)
+                            const isPast = isPastEvent(event.date, event.time);
 
                             return (
                               <div
                                 key={event.id}
                                 className={`absolute left-1 right-1 p-2 rounded-md text-sm shadow-sm hover:shadow-md transition-shadow cursor-pointer ${
-                                  isPast ? "bg-gray-200 text-gray-700" : `${event.color || "bg-indigo-500"} text-white`
+                                  isPast
+                                    ? "bg-gray-200 text-gray-700"
+                                    : `${
+                                        event.color || "bg-indigo-500"
+                                      } text-white`
                                 }`}
                                 style={{ top: "0", minHeight: "50px" }}
                               >
                                 <div className="font-semibold truncate flex items-center gap-1">
-                                  {isPast && <span className="inline-block w-2 h-2 rounded-full bg-gray-500"></span>}
+                                  {isPast && (
+                                    <span className="inline-block w-2 h-2 rounded-full bg-gray-500"></span>
+                                  )}
                                   {event.title}
                                 </div>
-                                {event.time && (
-                                  <div className="text-xs opacity-90 flex items-center gap-1">
-                                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-white"></span>
+                                {formatTime(event.time) && (
+                                  <div className="text-xs opacity-90">
                                     {formatTime(event.time)}
                                   </div>
                                 )}
                               </div>
-                            )
+                            );
                           })}
                         </div>
-                      )
+                      );
                     })}
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         )}
@@ -246,7 +290,9 @@ const Weekly: React.FC<WeeklyWithSidebarProps> = ({
           />
         </LocalizationProvider>
         <div>
-          <h4 className="text-lg font-semibold mb-3 text-gray-700">Categories</h4>
+          <h4 className="text-lg font-semibold mb-3 text-gray-700">
+            Categories
+          </h4>
           <div className="space-y-2 text-sm text-gray-600">
             {Object.keys(categories).map((cat) => (
               <label
@@ -272,7 +318,7 @@ const Weekly: React.FC<WeeklyWithSidebarProps> = ({
         </button>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Weekly
+export default Weekly;
