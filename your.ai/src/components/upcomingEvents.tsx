@@ -1,30 +1,40 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { format, isToday, isTomorrow, addDays, isBefore } from "date-fns"
-import { useAuth } from "../Context/authContext"
-import { Calendar, Clock, MapPin, Users, Loader2, CalendarX } from "lucide-react"
+import { useEffect, useState } from "react";
+import { format, isToday, isTomorrow, addDays, isBefore } from "date-fns";
+import { useAuth } from "../Context/authContext";
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  Users,
+  Loader2,
+  CalendarX,
+} from "lucide-react";
 
 interface Event {
-  id: number
-  title: string
-  date: string
-  duration?: number
-  type: string
-  color: string
-  location?: string
+  id: number;
+  title: string;
+  date: string;
+  duration?: number;
+  type: string;
+  color: string;
+  location?: string;
 }
 
 export default function UpcomingEvents() {
-  const { token } = useAuth()
-  const [events, setEvents] = useState<Event[]>([])
-  const [loading, setLoading] = useState(true)
+  const { token } = useAuth();
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const cn = (...classes: string[]) => classes.filter(Boolean).join(" ")
+  const cn = (...classes: string[]) => classes.filter(Boolean).join(" ");
 
   // Function to get event color based on type
   const getEventColor = (type: string) => {
-    const typeColors: Record<string, { bg: string; light: string; text: string; border: string }> = {
+    const typeColors: Record<
+      string,
+      { bg: string; light: string; text: string; border: string }
+    > = {
       Meeting: {
         bg: "bg-blue-500",
         light: "bg-blue-50",
@@ -55,7 +65,7 @@ export default function UpcomingEvents() {
         text: "text-indigo-700",
         border: "border-indigo-200",
       },
-    }
+    };
 
     return (
       typeColors[type] || {
@@ -64,19 +74,38 @@ export default function UpcomingEvents() {
         text: "text-gray-700",
         border: "border-gray-200",
       }
-    )
-  }
+    );
+  };
 
   // Function to determine event type based on title
   const getEventType = (title: string) => {
-    const lowerTitle = title.toLowerCase()
-    if (lowerTitle.includes("meet") || lowerTitle.includes("sync") || lowerTitle.includes("standup")) return "Meeting"
-    if (lowerTitle.includes("call") || lowerTitle.includes("chat") || lowerTitle.includes("interview")) return "Call"
-    if (lowerTitle.includes("appointment") || lowerTitle.includes("doctor") || lowerTitle.includes("dentist"))
-      return "Appointment"
-    if (lowerTitle.includes("task") || lowerTitle.includes("todo") || lowerTitle.includes("review")) return "Task"
-    return "Event"
-  }
+    const lowerTitle = title.toLowerCase();
+    if (
+      lowerTitle.includes("meet") ||
+      lowerTitle.includes("sync") ||
+      lowerTitle.includes("standup")
+    )
+      return "Meeting";
+    if (
+      lowerTitle.includes("call") ||
+      lowerTitle.includes("chat") ||
+      lowerTitle.includes("interview")
+    )
+      return "Call";
+    if (
+      lowerTitle.includes("appointment") ||
+      lowerTitle.includes("doctor") ||
+      lowerTitle.includes("dentist")
+    )
+      return "Appointment";
+    if (
+      lowerTitle.includes("task") ||
+      lowerTitle.includes("todo") ||
+      lowerTitle.includes("review")
+    )
+      return "Task";
+    return "Event";
+  };
 
   useEffect(() => {
     const fetchUpcomingEvents = async () => {
@@ -87,19 +116,25 @@ export default function UpcomingEvents() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-        })
+        });
 
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
-        const data = await response.json()
+        if (!response.ok)
+          throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
 
         // Sort events by date
-        data.sort((a: any, b: any) => new Date(a.start).getTime() - new Date(b.start).getTime())
+        data.sort(
+          (a: any, b: any) =>
+            new Date(a.start).getTime() - new Date(b.start).getTime()
+        );
 
         const formatted = data.map((item: any, idx: number) => {
-          const eventType = getEventType(item.summary || "")
-          const eventDate = new Date(item.start)
-          const endDate = new Date(item.end || eventDate)
-          const durationMinutes = Math.round((endDate.getTime() - eventDate.getTime()) / (1000 * 60))
+          const eventType = getEventType(item.summary || "");
+          const eventDate = new Date(item.start);
+          const endDate = new Date(item.end || eventDate);
+          const durationMinutes = Math.round(
+            (endDate.getTime() - eventDate.getTime()) / (1000 * 60)
+          );
 
           return {
             id: idx,
@@ -109,32 +144,36 @@ export default function UpcomingEvents() {
             type: eventType,
             color: getEventColor(eventType).bg,
             location: item.location || "No location",
-          }
-        })
+          };
+        });
 
         // Filter out past events (more than 1 day old)
-        const now = new Date()
-        const yesterday = addDays(now, -1)
+        const now = new Date();
         const filteredEvents = formatted.filter((event) => {
-          const eventDate = new Date(event.date)
-          return !isBefore(eventDate, yesterday)
-        })
+          const eventDate = new Date(event.date);
+          return eventDate >= now;
+        });
 
-        setEvents(filteredEvents)
+        setEvents(filteredEvents);
       } catch (error) {
-        console.error("Error fetching upcoming events:", error)
+        console.error("Error fetching upcoming events:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchUpcomingEvents()
-  }, [token])
+    fetchUpcomingEvents();
+  }, [token]);
 
   // Group events by date category
-  const todayEvents = events.filter((event) => isToday(new Date(event.date)))
-  const tomorrowEvents = events.filter((event) => isTomorrow(new Date(event.date)))
-  const upcomingEvents = events.filter((event) => !isToday(new Date(event.date)) && !isTomorrow(new Date(event.date)))
+  const todayEvents = events.filter((event) => isToday(new Date(event.date)));
+  const tomorrowEvents = events.filter((event) =>
+    isTomorrow(new Date(event.date))
+  );
+  const upcomingEvents = events.filter(
+    (event) =>
+      !isToday(new Date(event.date)) && !isTomorrow(new Date(event.date))
+  );
 
   if (loading) {
     return (
@@ -144,7 +183,7 @@ export default function UpcomingEvents() {
           <p className="text-sm text-gray-500">Loading upcoming events...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (events.length === 0) {
@@ -153,14 +192,18 @@ export default function UpcomingEvents() {
         <div className="rounded-full bg-gray-100 p-3">
           <CalendarX className="h-8 w-8 text-gray-400" />
         </div>
-        <h3 className="text-lg font-medium text-gray-700">No upcoming events</h3>
-        <p className="text-sm text-gray-500">Your schedule is clear for the next few days.</p>
+        <h3 className="text-lg font-medium text-gray-700">
+          No upcoming events
+        </h3>
+        <p className="text-sm text-gray-500">
+          Your schedule is clear for the next few days.
+        </p>
         <button className="mt-2 inline-flex items-center gap-1 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors">
           <Calendar className="h-4 w-4" />
           Add New Event
         </button>
       </div>
-    )
+    );
   }
 
   return (
@@ -210,17 +253,17 @@ export default function UpcomingEvents() {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 interface EventCardProps {
-  event: Event
+  event: Event;
 }
 
 function EventCard({ event }: EventCardProps) {
-  const eventDate = new Date(event.date)
-  const eventType = getEventType(event.type)
-  const colors = eventType
+  const eventDate = new Date(event.date);
+  const eventType = getEventType(event.type);
+  const colors = eventType;
 
   function getEventType(type: string) {
     switch (type) {
@@ -230,42 +273,42 @@ function EventCard({ event }: EventCardProps) {
           light: "bg-blue-50",
           text: "text-blue-700",
           border: "border-blue-200",
-        }
+        };
       case "Call":
         return {
           bg: "bg-green-500",
           light: "bg-green-50",
           text: "text-green-700",
           border: "border-green-200",
-        }
+        };
       case "Appointment":
         return {
           bg: "bg-purple-500",
           light: "bg-purple-50",
           text: "text-purple-700",
           border: "border-purple-200",
-        }
+        };
       case "Task":
         return {
           bg: "bg-amber-500",
           light: "bg-amber-50",
           text: "text-amber-700",
           border: "border-amber-200",
-        }
+        };
       case "Event":
         return {
           bg: "bg-indigo-500",
           light: "bg-indigo-50",
           text: "text-indigo-700",
           border: "border-indigo-200",
-        }
+        };
       default:
         return {
           bg: "bg-gray-500",
           light: "bg-gray-50",
           text: "text-gray-700",
           border: "border-gray-200",
-        }
+        };
     }
   }
 
@@ -276,7 +319,9 @@ function EventCard({ event }: EventCardProps) {
 
       <div className="ml-3">
         <div className="flex items-center justify-between">
-          <h4 className="font-medium text-gray-900 line-clamp-1">{event.title}</h4>
+          <h4 className="font-medium text-gray-900 line-clamp-1">
+            {event.title}
+          </h4>
           <span
             className={`inline-flex items-center rounded-full ${colors.light} ${colors.text} border ${colors.border} px-2.5 py-0.5 text-xs font-medium`}
           >
@@ -327,10 +372,14 @@ function EventCard({ event }: EventCardProps) {
             stroke="currentColor"
             strokeWidth={2}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9 5l7 7-7 7"
+            />
           </svg>
         </button>
       </div>
     </div>
-  )
+  );
 }

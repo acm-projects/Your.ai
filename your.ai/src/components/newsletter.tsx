@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, SetStateAction } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../Context/authContext"
@@ -188,8 +188,6 @@ const Newsletter = ({ isOpen, onClose }: NewsletterProps) => {
 
   // Calculate the date range for the header
   const getDateRangeString = () => {
-    if (weeklySchedule.length === 0) return ""
-
     // Get the current date
     const now = new Date()
 
@@ -232,7 +230,7 @@ const Newsletter = ({ isOpen, onClose }: NewsletterProps) => {
 
     // Initialize with empty arrays for each day of the week
     const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-    days.forEach((day, index) => {
+    days.forEach((day) => {
       eventsByDay[day] = []
     })
 
@@ -253,7 +251,7 @@ const Newsletter = ({ isOpen, onClose }: NewsletterProps) => {
         })
 
         // Determine category based on event title
-        const category = getCategoryFromTitle(event.title || "")
+        const category = getCategoryFromTitle(event.summary || "")
 
         // Create the event object with a color
         const formattedEvent: Event = {
@@ -321,12 +319,17 @@ const Newsletter = ({ isOpen, onClose }: NewsletterProps) => {
     const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     const currentDate = new Date()
 
-    return days.map((day) => {
-      const dayDate = new Date(currentDate)
-      const dayIndex = days.indexOf(day)
-      const currentDayIndex = currentDate.getDay() === 0 ? 6 : currentDate.getDay() - 1
-      const daysToAdd = (dayIndex - currentDayIndex + 7) % 7
-      dayDate.setDate(currentDate.getDate() + daysToAdd)
+    // Find the start of the current week (Monday)
+    const currentDay = currentDate.getDay() // 0 = Sunday, 1 = Monday, etc.
+    const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1
+
+    const startOfWeek = new Date(currentDate)
+    startOfWeek.setDate(currentDate.getDate() - daysFromMonday)
+
+    return days.map((day, index) => {
+      // Calculate the date for this day based on the start of the week
+      const dayDate = new Date(startOfWeek)
+      dayDate.setDate(startOfWeek.getDate() + index)
 
       return {
         day: day,
@@ -359,11 +362,13 @@ const Newsletter = ({ isOpen, onClose }: NewsletterProps) => {
 
       const data = await response.json()
       const message = data.newsletter
+
       // Clean up asterisks from the message
       const cleanedMessage = message.replace(/\*+/g, "")
       let tips: TimeManagementTip[] = []
 
       try {
+        // First try to parse as JSON
         const jsonMatch = cleanedMessage.match(/\[[\s\S]*\]/)
         if (jsonMatch) {
           tips = JSON.parse(jsonMatch[0])
@@ -393,11 +398,11 @@ const Newsletter = ({ isOpen, onClose }: NewsletterProps) => {
               }
             })
           } else {
-            // If no sections found, create a single tip
+            // If no sections found, use the entire message as a single tip
             tips = [
               {
                 title: "Weekly Optimization",
-                description: cleanedMessage.substring(0, 150) + "...",
+                description: cleanedMessage,
                 icon: "⏱️",
               },
             ]
@@ -405,10 +410,11 @@ const Newsletter = ({ isOpen, onClose }: NewsletterProps) => {
         }
       } catch (e) {
         console.error("Failed to parse newsletter content:", e)
+        // Use the entire message as a single tip if parsing fails
         tips = [
           {
             title: "Weekly Optimization",
-            description: cleanedMessage.substring(0, 150) + "...",
+            description: cleanedMessage,
             icon: "⏱️",
           },
         ]
@@ -474,7 +480,7 @@ const Newsletter = ({ isOpen, onClose }: NewsletterProps) => {
     }
   }, [isOpen, token])
 
-  const handleDayClick = (day: SetStateAction<{ day: string; date: string; events: { time: string; title: string; category: string; location: string }[] }>) => {
+  const handleDayClick = (day: DaySchedule) => {
     setSelectedDay(day)
     setCurrentView("day")
   }
@@ -507,7 +513,7 @@ const Newsletter = ({ isOpen, onClose }: NewsletterProps) => {
         className="relative bg-white text-black rounded-2xl w-11/12 max-w-7xl max-h-[90vh] overflow-y-auto shadow-2xl"
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 h-40 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 flex items-center justify-center overflow-hidden">
+        <div className="sticky top-0 z-10 h-32 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 flex items-center justify-center overflow-hidden">
           {/* Decorative elements */}
           <div className="absolute top-0 left-0 w-full h-full opacity-20">
             <div className="absolute top-5 left-10 w-32 h-32 rounded-full bg-white/20"></div>
@@ -529,7 +535,7 @@ const Newsletter = ({ isOpen, onClose }: NewsletterProps) => {
         </div>
 
         {/* Navigation */}
-        <div className="sticky top-40 z-10 bg-gray-100 border-b border-gray-200 px-6 py-3 flex justify-between items-center">
+        <div className="sticky top-32 z-10 bg-gray-100 border-b border-gray-200 px-6 py-3 flex justify-between items-center">
           <div className="flex space-x-4">
             <button
               onClick={() => setCurrentView("week")}
@@ -775,7 +781,7 @@ const Newsletter = ({ isOpen, onClose }: NewsletterProps) => {
                         <h2 className="text-xl font-bold text-gray-800">Weather Forecast</h2>
                       </div>
                       <div className="p-6">
-                        <div ref={weatherWidgetRef} className="weather-container min-h-[375px]">
+                        <div ref={weatherWidgetRef} className="weather-container min-h-[200px]">
                           <div
                             className="tomorrow"
                             data-location-id=""
