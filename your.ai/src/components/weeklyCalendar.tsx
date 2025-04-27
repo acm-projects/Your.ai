@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { addDays, format, startOfWeek, addWeeks } from "date-fns"
-import { useAuth } from "../Context/authContext" // Adjust path if needed
+import { useAuth } from "../Context/authContext" 
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
 interface CalendarEvent {

@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, abort
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_cors import CORS  # Import CORS
 from llm import chat_wrapper, newsletter_wrapper, kanban_wrapper
 
@@ -33,26 +33,63 @@ def hello():
 def get_events():
     try:
         service = calendar_service()
-        upcoming_result = service.events().list(
+
+        # Get the current time
+        now = datetime.utcnow()
+        
+        # Fetch past events from the last 30 days
+        thirty_days_ago = (now - timedelta(days=30)).isoformat() + "Z"
+        past_result = service.events().list(
             calendarId="primary",
-            maxResults=10,
+            maxResults=100,  # Increased to get more past events
             singleEvents=True,
             orderBy="startTime",
-            timeMin=datetime.utcnow().isoformat() + "Z"  # Only future events
+            timeMin=thirty_days_ago,  # From 30 days ago
+            timeMax=now.isoformat() + "Z"  # Up to now
         ).execute()
+        past_events = past_result.get('items', [])
 
+        # Fetch future events for the next 30 days
+        thirty_days_future = (now + timedelta(days=30)).isoformat() + "Z"
+        upcoming_result = service.events().list(
+            calendarId="primary",
+            maxResults=100,  # Increased to get more future events
+            singleEvents=True,
+            orderBy="startTime",
+            timeMin=now.isoformat() + "Z",  # From now
+            timeMax=thirty_days_future  # Up to 30 days in the future
+        ).execute()
         upcoming_events = upcoming_result.get('items', [])
 
-        event_list = [{
-            "summary": event.get("summary"),
-            "start": event["start"].get("dateTime", event["start"].get("date")),
-            "end": event["end"].get("dateTime", event["end"].get("date")),
-        } for event in upcoming_events]
+        # Combine events and format them consistently
+        all_events = past_events + upcoming_events
+        
+        # Process events to ensure consistent format
+        formatted_events = []
+        for event in all_events:
+            # Extract start and end times
+            start = event.get("start", {})
+            end = event.get("end", {})
+            
+            # Format the event
+            formatted_event = {
+                "summary": event.get("summary", "Untitled Event"),
+                "start": start.get("dateTime", start.get("date")),
+                "end": end.get("dateTime", end.get("date")),
+                "location": event.get("location", ""),
+                "description": event.get("description", ""),
+                "id": event.get("id", "")
+            }
+            
+            formatted_events.append(formatted_event)
 
-        return jsonify(event_list)
+        return jsonify(formatted_events)
 
     except Exception as e:
+        print(f"Error fetching events: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
+
 
 
 @app.route("/events", methods=["POST"])
