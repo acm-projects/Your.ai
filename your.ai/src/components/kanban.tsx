@@ -59,28 +59,17 @@ const Kanban: React.FC = () => {
   ];
 
   useEffect(() => {
-    setColumns((prev) =>
-      prev.map((col) => {
-<<<<<<< HEAD
-        if (col.id === "todo") {
-          // Add hardcoded tasks to the "todo" column
-          return { ...col, tasks: [...hardcodedTasks, ...col.tasks] };
+    setColumns((prev) => {
+      return prev.map((col) => {
+        if (col.id === "todo" && col.tasks.length === 0) {
+          return { ...col, tasks: [...hardcodedTasks] };
         }
         if (col.id === "inProgress") return { ...col, tasks: tasks.inProgress };
         if (col.id === "done") return { ...col, tasks: tasks.done };
         return col;
-      })
-    );
-  }, [tasks]);
-=======
-        if (col.id === "todo") return { ...col, tasks: tasks.todo }
-        if (col.id === "inProgress") return { ...col, tasks: tasks.inProgress }
-        if (col.id === "done") return { ...col, tasks: tasks.done }
-        return col
-      }),
-    )
-  }, [tasks, setColumns])
->>>>>>> 15d9d5286e2fcc077db7e7636893fec165db6662
+      });
+    });
+  }, []);
 
   const handleAddTask = (columnId: string) => {
     if (newTaskTitle.trim()) {
@@ -145,7 +134,7 @@ const Kanban: React.FC = () => {
       <div className="kanban-board flex-grow min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6 overflow-x-auto">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 relative">
           <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
-            Task Flow
+            
           </h1>
           <div className="flex gap-2 mt-4 md:mt-0">
             <button
@@ -185,9 +174,7 @@ const Kanban: React.FC = () => {
                     draggable
                     onDragStart={(e) => handleDragStart(e, column.id, task.id)}
                     onDragEnd={handleDragEnd}
-                    className={`bg-white p-4 rounded-lg border-l-4 ${
-                      draggedItem === task.id ? "opacity-50" : "opacity-100"
-                    } transition-all duration-200 cursor-grab active:cursor-grabbing`}
+                    className={`bg-white p-4 rounded-lg border-l-4 ${draggedItem === task.id ? "opacity-50" : "opacity-100"} transition-all duration-200 cursor-grab active:cursor-grabbing`}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="text-gray-800 font-medium">{task.title}</h3>
@@ -196,26 +183,14 @@ const Kanban: React.FC = () => {
                         className="text-gray-400 hover:text-red-500 transition-colors"
                         title="Delete task"
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
                     </div>
                     <div className="flex items-center justify-between text-xs">
                       <span
-                        className={`px-2 py-1 rounded-full text-xs border ${
-                          task.priority === "low"
-                            ? "bg-blue-100 text-blue-800 border-blue-300"
-                            : task.priority === "medium"
-                              ? "bg-amber-100 text-amber-800 border-amber-300"
-                              : "bg-red-100 text-red-800 border-red-300"
-                        }`}
+                        className={`px-2 py-1 rounded-full text-xs border ${task.priority === "low" ? "bg-blue-100 text-blue-800 border-blue-300" : task.priority === "medium" ? "bg-amber-100 text-amber-800 border-amber-300" : "bg-red-100 text-red-800 border-red-300"}`}
                       >
                         {task.priority}
                       </span>
@@ -245,19 +220,7 @@ const Kanban: React.FC = () => {
                         <button
                           key={level}
                           onClick={() => setNewTaskPriority(level as "low" | "medium" | "high")}
-                          className={`px-2 py-1 text-xs rounded-md ${
-                            newTaskPriority === level
-                              ? level === "low"
-                                ? "bg-blue-500 text-white"
-                                : level === "medium"
-                                  ? "bg-amber-500 text-white"
-                                  : "bg-red-500 text-white"
-                              : level === "low"
-                                ? "bg-blue-100 text-blue-800"
-                                : level === "medium"
-                                  ? "bg-amber-100 text-amber-800"
-                                  : "bg-red-100 text-red-800"
-                          }`}
+                          className={`px-2 py-1 text-xs rounded-md ${newTaskPriority === level ? level === "low" ? "bg-blue-500 text-white" : level === "medium" ? "bg-amber-500 text-white" : "bg-red-500 text-white" : level === "low" ? "bg-blue-100 text-blue-800" : level === "medium" ? "bg-amber-100 text-amber-800" : "bg-red-100 text-red-800"}`}
                         >
                           {level.charAt(0).toUpperCase() + level.slice(1)}
                         </button>
@@ -292,7 +255,6 @@ const Kanban: React.FC = () => {
         </div>
       </div>
 
-      {/* Newsletter Modal */}
       <Newsletter isOpen={isNewsletterOpen} onClose={closeNewsletter} />
     </div>
   )
