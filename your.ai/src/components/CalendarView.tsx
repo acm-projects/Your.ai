@@ -1,29 +1,10 @@
-import React from "react"
+import type React from "react"
 import FullCalendar from "@fullcalendar/react"
 import dayGridPlugin from "@fullcalendar/daygrid"
-import DayView from "./dayView"
-import Weekly from "./weekly"
-import { Dayjs } from "dayjs"
-import { useCalendar } from "../context/CalendarContext" // ✅ Adjust this path if needed
-
-type CalendarDay = {
-  date: Date
-  isCurrentMonth: boolean
-}
-
-const handleDayClick = (day: CalendarDay) => {
-  console.log(day.date)
-}
-
-interface Event {
-  id: string
-  title: string
-  time: string
-  attendees: number
-  type: "meeting" | "task" | "session"
-  date: string
-  color?: string // ✅ Include optional color
-}
+import DayView from "./DayView"
+import Weekly from "./Weekly"
+import type { Dayjs } from "dayjs"
+import { useCalendar } from "../context/CalendarContext"
 
 interface CalendarViewProps {
   view: "Day" | "Weekly" | "Monthly"
@@ -51,8 +32,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
           events={events.map((event) => ({
             title: event.title,
             date: event.date,
-            backgroundColor: event.color?.replace("bg-", "#") || "#3b82f6",
-            borderColor: event.color?.replace("bg-", "#") || "#3b82f6",
+            backgroundColor: event.color?.replace("bg-", "") || "#3b82f6",
+            borderColor: event.color?.replace("bg-", "") || "#3b82f6",
           }))}
           height="auto"
           headerToolbar={{
@@ -63,21 +44,17 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         />
       </div>
     )
-  }
-
-  if (view === "Day") {
+  } else if (view === "Day") {
     return (
       <div className="h-[calc(100vh-200px)] w-full">
         <DayView
           date={selectedDate?.toDate() || new Date()}
-          setDate={(d) => setSelectedDate(d)}
+          setDate={(d) => setSelectedDate(dayjs(d))}
           onNewEvent={() => alert("New event clicked")}
         />
       </div>
     )
-  }
-
-  if (view === "Weekly") {
+  } else if (view === "Weekly") {
     return (
       <Weekly
         selectedDate={selectedDate}
@@ -86,9 +63,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         handleCategoryChange={handleCategoryChange}
       />
     )
+  } else {
+    return null
   }
-
-  return null
 }
 
 export default CalendarView

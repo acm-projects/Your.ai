@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { addDays, format, startOfWeek, addWeeks } from "date-fns"
-import { useAuth } from "../Context/authContext" // Adjust path if needed
+import { useAuth } from "../Context/authContext" 
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
 interface CalendarEvent {
@@ -39,7 +39,6 @@ export default function WeeklyCalendar() {
     }
   })
 
-  // Generate hours based on min and max hour
   const hours = Array.from({ length: maxHour - minHour + 1 }, (_, i) => {
     const hour = i + minHour
     return hour < 12 ? `${hour} AM` : hour === 12 ? `${hour} PM` : `${hour - 12} PM`
@@ -47,7 +46,6 @@ export default function WeeklyCalendar() {
 
   const cn = (...classes: string[]) => classes.filter(Boolean).join(" ")
 
-  // Generate a color based on event title for consistency
   const getEventColor = (title: string) => {
     const colors = [
       "bg-blue-500",
@@ -83,7 +81,6 @@ export default function WeeklyCalendar() {
 
         const data = await response.json()
 
-        // Process events and determine min/max hours
         let earliestHour = 8
         let latestHour = 19
 
@@ -96,7 +93,7 @@ export default function WeeklyCalendar() {
 
           // Calculate duration in hours
           const durationMs = endDateTime.getTime() - startDateTime.getTime()
-          const durationHours = Math.max(0.5, durationMs / (1000 * 60 * 60)) // Minimum 30 min
+          const durationHours = Math.max(0.5, durationMs / (1000 * 60 * 60)) 
 
           // Update earliest and latest hours
           earliestHour = Math.min(earliestHour, startHour)
