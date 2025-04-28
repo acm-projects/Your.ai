@@ -28,7 +28,6 @@ const Kanban: React.FC = () => {
   const [isAddingTask, setIsAddingTask] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Hardcoded tasks for the "todo" section
   const hardcodedTasks: Task[] = [
     {
       id: 1,
@@ -50,7 +49,6 @@ const Kanban: React.FC = () => {
     }
   ];
 
-  // Sync columns with context tasks and add hardcoded tasks to "todo" column
   useEffect(() => {
     setColumns((prev) =>
       prev.map((col) => {
