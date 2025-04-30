@@ -30,60 +30,39 @@ def hello():
 # ---------------- Google Calendar CRUD ------------------
 
 
-@app.route("/events", methods=["GET"])
-def get_events():
+@app.route("/past_events", methods=["GET"])
+def get_past_events():
     try:
         service = calendar_service()
 
         now = datetime.utcnow()
         thirty_days_ago = (now - timedelta(days=30)).isoformat() + "Z"
-        thirty_days_future = (now + timedelta(days=30)).isoformat() + "Z"
 
-        # Get events from the past 30 days
-        past_result = service.events().list(
+        events_result = service.events().list(
             calendarId="primary",
-            timeMin=thirty_days_ago,
-            timeMax=now.isoformat() + "Z",
+            maxResults=100,  # Fetch more past events
             singleEvents=True,
             orderBy="startTime",
-            maxResults=100,
+            timeMin=thirty_days_ago,  # 30 days ago
+            timeMax=now.isoformat() + "Z"  # Up to now
         ).execute()
-        past_events = past_result.get("items", [])
 
-        # Get events for the next 30 days
-        upcoming_result = service.events().list(
-            calendarId="primary",
-            timeMin=now.isoformat() + "Z",
-            timeMax=thirty_days_future,
-            singleEvents=True,
-            orderBy="startTime",
-            maxResults=100,
-        ).execute()
-        upcoming_events = upcoming_result.get("items", [])
+        events = events_result.get("items", [])
+        event_list = [{
+            "summary": event.get("summary", "Untitled Event"),
+            "start": event["start"].get("dateTime", event["start"].get("date")),
+            "end": event["end"].get("dateTime", event["end"].get("date")),
+            "location": event.get("location", ""),
+            "description": event.get("description", ""),
+            "id": event.get("id", "")
+        } for event in events]
 
-        # Merge and sort all events by start time
-        all_events = past_events + upcoming_events
-        all_events.sort(key=lambda e: e["start"].get("dateTime", e["start"].get("date")))
-
-        formatted = []
-        for event in all_events:
-            start = event.get("start", {})
-            end = event.get("end", {})
-
-            formatted.append({
-                "summary": event.get("summary", "Untitled Event"),
-                "start": start.get("dateTime", start.get("date")),
-                "end": end.get("dateTime", end.get("date")),
-                "location": event.get("location", ""),
-                "description": event.get("description", ""),
-                "id": event.get("id", "")
-            })
-
-        return jsonify(formatted)
-
+        return jsonify(event_list)
     except Exception as e:
-        print(f"Error fetching events: {str(e)}")
+        print(f"Error fetching past events: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
+
 
 @app.route("/events", methods=["POST"])
 def create_event():

@@ -93,7 +93,7 @@ export default function WeeklyCalendar() {
 
           // Calculate duration in hours
           const durationMs = endDateTime.getTime() - startDateTime.getTime()
-          const durationHours = Math.max(0.5, durationMs / (1000 * 60 * 60)) 
+          const durationHours = Math.min(3, Math.max(0.5, durationMs / (1000 * 60 * 60)))
 
           // Update earliest and latest hours
           earliestHour = Math.min(earliestHour, startHour)
@@ -103,7 +103,7 @@ export default function WeeklyCalendar() {
             id: String(idx),
             title: item.summary || "No Title",
             time: format(startDateTime, "h:mm a"),
-            date: format(startDateTime, "yyyy-MM-dd"),
+            date: startDateTime.toISOString().slice(0, 10),
             duration: durationHours,
             color: getEventColor(item.summary || "No Title"),
             startHour,
@@ -216,13 +216,14 @@ export default function WeeklyCalendar() {
 
                         return (
                           <div
-                            key={event.id}
-                            className={cn(
-                              "absolute left-1 right-1 rounded-md p-2 text-xs font-medium text-white shadow-sm transition-all hover:shadow-md",
-                              event.color,
-                            )}
-                            style={{ top: `${top}px`, height: `${height}px` }}
-                          >
+                          key={event.id}
+                          className={cn(
+                            "absolute left-1 right-1 rounded-md p-2 text-xs font-medium text-white shadow-sm transition-all hover:shadow-md max-h-[168px]",
+                            event.color
+                          )}
+                          style={{ top: `${top}px`, height: `${height}px` }}
+                        >
+                        
                             <div className="font-semibold truncate">{event.title}</div>
                             <div className="text-[10px] opacity-90">{event.time}</div>
                           </div>

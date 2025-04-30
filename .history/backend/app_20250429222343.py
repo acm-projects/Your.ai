@@ -29,61 +29,68 @@ def hello():
 
 # ---------------- Google Calendar CRUD ------------------
 
-
 @app.route("/events", methods=["GET"])
 def get_events():
     try:
         service = calendar_service()
 
+        # Get the current time
         now = datetime.utcnow()
+        
+        # Fetch past events from the last 30 days
         thirty_days_ago = (now - timedelta(days=30)).isoformat() + "Z"
-        thirty_days_future = (now + timedelta(days=30)).isoformat() + "Z"
-
-        # Get events from the past 30 days
         past_result = service.events().list(
             calendarId="primary",
-            timeMin=thirty_days_ago,
-            timeMax=now.isoformat() + "Z",
+            maxResults=100,  # Increased to get more past events
             singleEvents=True,
             orderBy="startTime",
-            maxResults=100,
+            timeMin=thirty_days_ago,  # From 30 days ago
+            timeMax=now.isoformat() + "Z"  # Up to now
         ).execute()
-        past_events = past_result.get("items", [])
+        past_events = past_result.get('items', [])
 
-        # Get events for the next 30 days
+        # Fetch future events for the next 30 days
+        thirty_days_future = (now + timedelta(days=30)).isoformat() + "Z"
         upcoming_result = service.events().list(
             calendarId="primary",
-            timeMin=now.isoformat() + "Z",
-            timeMax=thirty_days_future,
+            maxResults=100,  # Increased to get more future events
             singleEvents=True,
             orderBy="startTime",
-            maxResults=100,
+            timeMin=now.isoformat() + "Z",  # From now
+            timeMax=thirty_days_future  # Up to 30 days in the future
         ).execute()
-        upcoming_events = upcoming_result.get("items", [])
+        upcoming_events = upcoming_result.get('items', [])
 
-        # Merge and sort all events by start time
+        # Combine events and format them consistently
         all_events = past_events + upcoming_events
-        all_events.sort(key=lambda e: e["start"].get("dateTime", e["start"].get("date")))
-
-        formatted = []
+        
+        # Process events to ensure consistent format
+        formatted_events = []
         for event in all_events:
+            # Extract start and end times
             start = event.get("start", {})
             end = event.get("end", {})
-
-            formatted.append({
+            
+            # Format the event
+            formatted_event = {
                 "summary": event.get("summary", "Untitled Event"),
                 "start": start.get("dateTime", start.get("date")),
                 "end": end.get("dateTime", end.get("date")),
                 "location": event.get("location", ""),
                 "description": event.get("description", ""),
                 "id": event.get("id", "")
-            })
+            }
+            
+            formatted_events.append(formatted_event)
 
-        return jsonify(formatted)
+        return jsonify(formatted_events)
 
     except Exception as e:
         print(f"Error fetching events: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
+
+
 
 @app.route("/events", methods=["POST"])
 def create_event():
